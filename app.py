@@ -17,21 +17,26 @@ if uploaded_file is not None:
             for pagina in pdf.pages:
                 texto_completo += pagina.extract_text() + "\n"
         
-        # 2. Função de busca por Regex corrigida com 'if' em inglês
-        def extrair_valor(padrao, texto):
-            match = re.search(padrao, texto, re.IGNORECASE)
-            return match.group(1).strip() if match else "Não encontrado"
+        # 2. Função de busca flexível por Regex
+        def extrair_valor(padroes, texto):
+            for padrao in padroes:
+                match = re.search(padrao, texto, re.IGNORECASE)
+                if match:
+                    val = match.group(1).strip()
+                    if val and not val.startswith('.'):
+                        return val
+            return "Não encontrado"
 
-        # Extração baseada nos padrões do laudo do Lab. Cruzeiro
-        glicose = extrair_valor(r"GLICOSE\s*\(Soro\)\s*\|\s*([\d,\.]+)", texto_completo)
-        ureia = extrair_valor(r"Uréia\.\s*:\s*([\d,\.]+)", texto_completo)
-        creatinina = extrair_valor(r"CREATININA\s*\(SORO\)[^\d]*([\d,\.]+)\s*mg/dL", texto_completo)
-        colesterol_total = extrair_valor(r"COLESTEROL TOTAL:\s*([\d,\.]+)", texto_completo)
-        hdl = extrair_valor(r"COLESTEROL HDL\.\s*([\d,\.]+)", texto_completo)
-        ldl = extrair_valor(r"COLESTEROL LDL\.\s*:\s*([\d,\.]+)", texto_completo)
-        triglicerides = extrair_valor(r"TRIGLICERIDES[^\d]*([\d,\.]+)", texto_completo)
+        # Múltiplas opções de padrões para cada exame para garantir a captura
+        glicose = extrair_valor([r"GLICOSE\s*\(Soro\)\s*\|\s*([\d,\.]+)", r"GLICOSE.*?([\d,\.]+)\s*mg/dl"], texto_completo)
+        ureia = extrair_valor([r"Uréia\.\s*:\s*([\d,\.]+)", r"Uréia[^\d]*([\d,\.]+)\s*mg/dl"], texto_completo)
+        creatinina = extrair_valor([r"CREATININA\s*\(SORO\)[^\d]*([\d,\.]+)", r"Resultado:\s*([\d,\.]+)\s*mg/dL"], texto_completo)
+        colesterol_total = extrair_valor([r"COLESTEROL TOTAL:\s*([\d,\.]+)", r"COLESTEROL TOTAL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
+        hdl = extrair_valor([r"COLESTEROL HDL\.\s*([\d,\.]+)", r"HDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
+        ldl = extrair_valor([r"COLESTEROL LDL\.\s*:\s*([\d,\.]+)", r"LDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
+        triglicerides = extrair_valor([r"TRIGLICERIDES[^\d]*([\d,\.]+)", r"TRIGLICERIDES[^\d]*:\s*([\d,\.]+)"], texto_completo)
         
-        # 3. Monta o texto limpo em formato de texto puro para o prontuário
+        # 3. Monta o texto limpo para o prontuário
         resumo_formatado = f"""RESUL. LABS - LAB. CRUZEIRO
 - Glicose (Soro): {glicose} mg/dL
 - Ureia (Soro): {ureia} mg/dL
@@ -43,4 +48,4 @@ if uploaded_file is not None:
 
         st.subheader("Resultado Pronto para o Prontuário:")
         st.text_area("Selecione, copie e cole abaixo:", resumo_formatado, height=250)
-        st.success("Extração concluída com sucesso e sem uso de IA!")
+        st.success("Extração otimizada concluída com sucesso!")
