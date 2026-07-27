@@ -47,7 +47,7 @@ if uploaded_file is not None and api_key_input:
             st.success("Pronto! Nenhum código de marcação foi incluído.")
             
         except Exception as e:
-            st.error(Ocorreu um erro ao processar a requisição: {e})
+            st.error(" Ocorreu um erro ao processar a requisição: {e}" )
 
 elif uploaded_file is not None and not api_key_input:
     st.warning("Por favor, informe a chave da API do Gemini para processar o documento.")
