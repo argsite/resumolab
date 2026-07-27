@@ -17,12 +17,12 @@ if uploaded_file is not None:
             for pagina in pdf.pages:
                 texto_completo += pagina.extract_text() + "\n"
         
-        # 2. Funções de busca por Regex para capturar exames comuns
+        # 2. Função de busca por Regex corrigida com 'if' em inglês
         def extrair_valor(padrao, texto):
             match = re.search(padrao, texto, re.IGNORECASE)
-            return match.group(1).strip() se match else "Não encontrado"
+            return match.group(1).strip() if match else "Não encontrado"
 
-        # Exemplos de padrões para buscar no texto do laudo do Lab. Cruzeiro
+        # Extração baseada nos padrões do laudo do Lab. Cruzeiro
         glicose = extrair_valor(r"GLICOSE\s*\(Soro\)\s*\|\s*([\d,\.]+)", texto_completo)
         ureia = extrair_valor(r"Uréia\.\s*:\s*([\d,\.]+)", texto_completo)
         creatinina = extrair_valor(r"CREATININA\s*\(SORO\)[^\d]*([\d,\.]+)\s*mg/dL", texto_completo)
@@ -39,8 +39,8 @@ if uploaded_file is not None:
 - Colesterol Total: {colesterol_total} mg/dL
 - Colesterol HDL: {hdl} mg/dL
 - Colesterol LDL: {ldl} mg/dL
-- Triglicérides: {triglicérides} mg/dL"""
+- Triglicérides: {triglicerides} mg/dL"""
 
         st.subheader("Resultado Pronto para o Prontuário:")
         st.text_area("Selecione, copie e cole abaixo:", resumo_formatado, height=250)
-        st.success("Extração concluída sem uso de IA!")
+        st.success("Extração concluída com sucesso e sem uso de IA!")
