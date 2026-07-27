@@ -49,6 +49,6 @@ if uploaded_file is not None:
 - Colesterol LDL: {ldl} mg/dL
 - Triglicérides: {triglicerides} mg/dL"""
 
-2. st.subheader("Resultado Pronto para o Prontuário:")
+        st.subheader("Resultado Pronto para o Prontuário:")
         st.text_area("Selecione, copie e cole abaixo:", resumo_formatado, height=250)
         st.success("Extração otimizada concluída com sucesso!")
