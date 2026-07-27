@@ -1,53 +1,46 @@
 import streamlit as st
 import pdfplumber
-from google import genai
+import re
 
 st.set_page_config(page_title="ResumoLab", page_icon="📋", layout="centered")
 
-st.title("📋 ResumoLab")
-st.write("Faça o upload do PDF do laboratório para gerar o resumo limpo para o prontuário.")
-
-# Captura a chave de forma segura dos segredos ou do input da tela
-api_key_input = st.secrets.get("GEMINI_API_KEY") or st.text_input("Insira sua Gemini API Key:", type="password")
+st.title("📋 ResumoLab (Modo Local / Sem IA)")
+st.write("Faça o upload do PDF do laboratório para extrair os resultados de forma automática.")
 
 uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame", type=["pdf"])
 
-if uploaded_file is not None and api_key_input:
-    with st.spinner("Lendo e formatando o laudo..."):
-        try:
-            # 1. Extrai o texto cru do PDF enviado
-            texto_extraido = ""
-            with pdfplumber.open(uploaded_file) as pdf:
-                for pagina in pdf.pages:
-                    texto_extraido += pagina.extract_text() + "\n"
-            
-            # 2. Inicializa o cliente do Gemini passando explicitamente a chave de API
-            client = genai.Client(api_key=api_key_input)
-            
-            # 3. Prompt estrito para garantir texto puro sem formatações complexas ou marcações
-            prompt = f"""
-            Você é um assistente médico especialista em estruturação de prontuários.
-            Analise o texto do laudo de laboratório abaixo e crie um resumo limpo, em TEXTO PURO (sem markdown complexo, sem negritos com asteriscos, sem tags HTML, sem códigos de marcação).
-            Organize todos os exames em linhas separadas, agrupados por categorias, contendo o nome do exame, o resultado e o valor de referência entre parênteses.
-            
-            Texto do laudo:
-            {texto_extraido}
-            """
-            
-            # 4. Chamada ao modelo Gemini corrigido para gemini-2.0-flash
-            response = client.models.generate_content(
-                model='gemini-2.0-flash',
-                contents=prompt,
-            )
-            
-            resumo_limpo = response.text
-            
-            st.subheader("Resultado Pronto para o Prontuário:")
-            st.text_area("Selecione, copie e cole abaixo:", resumo_limpo, height=400)
-            st.success("Pronto! Nenhum código de marcação foi incluído.")
-            
-        except Exception as e:
-            st.error(f"Ocorreu um erro ao processar a requisição: {e}")
+if uploaded_file is not None:
+    with st.spinner("Extraindo dados do PDF..."):
+        # 1. Extrai todo o texto do PDF
+        texto_completo = ""
+        with pdfplumber.open(uploaded_file) as pdf:
+            for pagina in pdf.pages:
+                texto_completo += pagina.extract_text() + "\n"
+        
+        # 2. Funções de busca por Regex para capturar exames comuns
+        def extrair_valor(padrao, texto):
+            match = re.search(padrao, texto, re.IGNORECASE)
+            return match.group(1).strip() se match else "Não encontrado"
 
-elif uploaded_file is not None and not api_key_input:
-    st.warning("Por favor, informe a chave da API do Gemini para processar o documento.")
+        # Exemplos de padrões para buscar no texto do laudo do Lab. Cruzeiro
+        glicose = extrair_valor(r"GLICOSE\s*\(Soro\)\s*\|\s*([\d,\.]+)", texto_completo)
+        ureia = extrair_valor(r"Uréia\.\s*:\s*([\d,\.]+)", texto_completo)
+        creatinina = extrair_valor(r"CREATININA\s*\(SORO\)[^\d]*([\d,\.]+)\s*mg/dL", texto_completo)
+        colesterol_total = extrair_valor(r"COLESTEROL TOTAL:\s*([\d,\.]+)", texto_completo)
+        hdl = extrair_valor(r"COLESTEROL HDL\.\s*([\d,\.]+)", texto_completo)
+        ldl = extrair_valor(r"COLESTEROL LDL\.\s*:\s*([\d,\.]+)", texto_completo)
+        triglicerides = extrair_valor(r"TRIGLICERIDES[^\d]*([\d,\.]+)", texto_completo)
+        
+        # 3. Monta o texto limpo em formato de texto puro para o prontuário
+        resumo_formatado = f"""RESUL. LABS - LAB. CRUZEIRO
+- Glicose (Soro): {glicose} mg/dL
+- Ureia (Soro): {ureia} mg/dL
+- Creatinina (Soro): {creatinina} mg/dL
+- Colesterol Total: {colesterol_total} mg/dL
+- Colesterol HDL: {hdl} mg/dL
+- Colesterol LDL: {ldl} mg/dL
+- Triglicérides: {triglicérides} mg/dL"""
+
+        st.subheader("Resultado Pronto para o Prontuário:")
+        st.text_area("Selecione, copie e cole abaixo:", resumo_formatado, height=250)
+        st.success("Extração concluída sem uso de IA!")
