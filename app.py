@@ -35,11 +35,14 @@ if uploaded_file is not None and api_key:
         """
         
         # 4. Chamada ao modelo Gemini
-                # Chamada ao modelo Gemini corrigida
+
+        # Chamada ao modelo Gemini corrigida
         response = client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-2.0-flash',
             contents=prompt,
         )
+
+        
 
         
         resumo_limpo = response.text
