@@ -20,20 +20,23 @@ if uploaded_file is not None:
         # 2. Função de busca flexível por Regex
         def extrair_valor(padroes, texto):
             for padrao in padroes:
-                match = re.search(padrao, texto, re.IGNORECASE)
+                match = re.search(padrao, texto, re.IGNORECASE | re.DOTALL)
                 if match:
                     val = match.group(1).strip()
                     if val and not val.startswith('.'):
                         return val
             return "Não encontrado"
 
-        # Múltiplas opções de padrões para cada exame para garantir a captura
+        # Padrões aprimorados para capturar os exames do Lab. Cruzeiro
         glicose = extrair_valor([r"GLICOSE\s*\(Soro\)\s*\|\s*([\d,\.]+)", r"GLICOSE.*?([\d,\.]+)\s*mg/dl"], texto_completo)
         ureia = extrair_valor([r"Uréia\.\s*:\s*([\d,\.]+)", r"Uréia[^\d]*([\d,\.]+)\s*mg/dl"], texto_completo)
         creatinina = extrair_valor([r"CREATININA\s*\(SORO\)[^\d]*([\d,\.]+)", r"Resultado:\s*([\d,\.]+)\s*mg/dL"], texto_completo)
         colesterol_total = extrair_valor([r"COLESTEROL TOTAL:\s*([\d,\.]+)", r"COLESTEROL TOTAL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
-        hdl = extrair_valor([r"COLESTEROL HDL\.\s*([\d,\.]+)", r"HDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
-        ldl = extrair_valor([r"COLESTEROL LDL\.\s*:\s*([\d,\.]+)", r"LDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
+        
+        # Ajustados para capturar o HDL e o LDL mesmo com quebras de linha no laudo
+        hdl = extrair_valor([r"COLESTEROL HDL\.\s*([\d,\.]+)", r"COLESTEROL\s*HDL[^\d]*([\d,\.]+)", r"HDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
+        ldl = extrair_valor([r"COLESTEROL LDL\.\s*:\s*([\d,\.]+)", r"COLESTEROL\s*LDL[^\d]*([\d,\.]+)", r"LDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
+        
         triglicerides = extrair_valor([r"TRIGLICERIDES[^\d]*([\d,\.]+)", r"TRIGLICERIDES[^\d]*:\s*([\d,\.]+)"], texto_completo)
         
         # 3. Monta o texto limpo para o prontuário
@@ -46,6 +49,6 @@ if uploaded_file is not None:
 - Colesterol LDL: {ldl} mg/dL
 - Triglicérides: {triglicerides} mg/dL"""
 
-        st.subheader("Resultado Pronto para o Prontuário:")
+2. st.subheader("Resultado Pronto para o Prontuário:")
         st.text_area("Selecione, copie e cole abaixo:", resumo_formatado, height=250)
         st.success("Extração otimizada concluída com sucesso!")
