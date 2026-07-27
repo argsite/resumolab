@@ -7,8 +7,7 @@ st.set_page_config(page_title="ResumoLab", page_icon="📋", layout="centered")
 st.title("📋 ResumoLab")
 st.write("Faça o upload do PDF do laboratório para gerar o resumo limpo para o prontuário.")
 
-# Configuração da chave de API do Gemini (pode ser colocada nos Secrets do Streamlit Cloud)
-# O usuário configura a chave de segurança nas configurações do Streamlit Cloud
+# Configuração da chave de API do Gemini via Streamlit Secrets ou campo de texto
 api_key = st.secrets.get("GEMINI_API_KEY") or st.text_input("Insira sua Gemini API Key:", type="password")
 
 uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame", type=["pdf"])
@@ -24,7 +23,7 @@ if uploaded_file is not None and api_key:
         # 2. Configura o cliente da API do Gemini
         client = genai.Client(api_key=api_key)
         
-        # 3. Prompt estrito para garantir texto puro sem formatações HTML ou marcações estranhas
+        # 3. Prompt estrito para garantir texto puro sem formatações complexas ou marcações
         prompt = f"""
         Você é um assistente médico especialista em estruturação de prontuários.
         Analise o texto do laudo de laboratório abaixo e crie um resumo limpo, em TEXTO PURO (sem markdown complexo, sem negritos com asteriscos, sem tags HTML, sem códigos de marcação).
@@ -34,16 +33,11 @@ if uploaded_file is not None and api_key:
         {texto_extraido}
         """
         
-        # 4. Chamada ao modelo Gemini
-
-        # Chamada ao modelo Gemini corrigida
+        # 4. Chamada ao modelo Gemini corrigido para gemini-2.0-flash
         response = client.models.generate_content(
             model='gemini-2.0-flash',
             contents=prompt,
         )
-
-        
-
         
         resumo_limpo = response.text
         
