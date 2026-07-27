@@ -34,9 +34,9 @@ if uploaded_file is not None and api_key_input:
             {texto_extraido}
             """
             
-            # 4. Chamada ao modelo Gemini oficial e atualizado
+            # 4. Chamada ao modelo Gemini corrigido para gemini-2.0-flash
             response = client.models.generate_content(
-                model='gemini-2.5-flash',
+                model='gemini-2.0-flash',
                 contents=prompt,
             )
             
@@ -47,7 +47,7 @@ if uploaded_file is not None and api_key_input:
             st.success("Pronto! Nenhum código de marcação foi incluído.")
             
         except Exception as e:
-            st.error(f"Ocorreu um erro ao processar a requisição: {e}" )
+            st.error(f"Ocorreu um erro ao processar a requisição: {e}")
 
 elif uploaded_file is not None and not api_key_input:
     st.warning("Por favor, informe a chave da API do Gemini para processar o documento.")
