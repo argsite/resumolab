@@ -27,7 +27,7 @@ if uploaded_file is not None:
                         return val
             return "Não encontrado"
 
-        # Padrões para todos os exames mapeados
+        # Padrões para os exames bioquímicos, hematológicos, hormonais e vitaminas
         glicose = extrair_valor([r"GLICOSE\s*\(Soro\)\s*\|\s*([\d,\.]+)", r"GLICOSE.*?([\d,\.]+)\s*mg/dl"], texto_completo)
         ureia = extrair_valor([r"Uréia\.\s*:\s*([\d,\.]+)", r"Uréia[^\d]*([\d,\.]+)\s*mg/dl"], texto_completo)
         creatinina = extrair_valor([r"CREATININA\s*\(SORO\)[^\d]*([\d,\.]+)", r"Resultado:\s*([\d,\.]+)\s*mg/dL"], texto_completo)
@@ -36,7 +36,6 @@ if uploaded_file is not None:
         ldl = extrair_valor([r"COLESTEROL LDL\.\s*:\s*([\d,\.]+)", r"COLESTEROL\s*LDL[^\d]*([\d,\.]+)", r"LDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
         triglicerides = extrair_valor([r"TRIGLICERIDES[^\d]*([\d,\.]+)", r"TRIGLICERIDES[^\d]*:\s*([\d,\.]+)"], texto_completo)
         
-        # Novos exames adicionados à lista
         eritrocitos = extrair_valor([r"HEMÁCIAS\.\s*([\d,\.]+)", r"ERITRÓCITOS[^\d]*([\d,\.]+)\s*M"], texto_completo)
         hematocrito = extrair_valor([r"HEMATOCRITO\.\s*([\d,\.]+)", r"HEMATOCRITO[^\d]*([\d,\.]+)\s*%"], texto_completo)
         plaquetas = extrair_valor([r"PLAQUETAS\.\s*([\d,\.]+)", r"PLAQUETAS[^\d]*([\d,\.]+)"], texto_completo)
@@ -88,6 +87,15 @@ if uploaded_file is not None:
         creatinina_urinaria = extrair_valor([r"CREATININA URINÁRIA.*?([\d,\.]+)", r"CREATININA URINÁRIA.*?([\d,\.]+)\s*mg/dL"], texto_completo)
         microalbuminuria = extrair_valor([r"MICROALBUMINÚRIA.*?([\d,\.]+)", r"MICROALBUMINÚRIA.*?([\d,\.]+)\s*mg/24h"], texto_completo)
 
+        # Novos parâmetros do EAS (Urina Tipo I)
+        urina_cor = extrair_valor([r"Cor\s*([A-ZÀ-Ú\s]+)\nAspecto", r"Cor\s*([A-ZÀ-Ú\s]+)"], texto_completo)
+        urina_aspecto = extrair_valor([r"Aspecto\s*([A-ZÀ-Ú\s]+)\nDensidade", r"Aspecto\s*([A-ZÀ-Ú\s]+)"], texto_completo)
+        urina_densidade = extrair_valor([r"Densidade\s*([\d,\.]+)", r"Densidade[^\d]*([\d,\.]+)"], texto_completo)
+        urina_ph = extrair_valor([r"PH\s*([\d,\.]+)", r"PH[^\d]*([\d,\.]+)"], texto_completo)
+        urina_proteinas = extrair_valor([r"Proteínas\s*([A-ZÀ-Ú\.:\s]+)\nCorpos", r"Proteínas[^\w]*(NEGATIVO|POSITIVO|[\d,\.]+)"], texto_completo)
+        urina_glicose = extrair_valor([r"GLICOSE\.\.\s*([A-ZÀ-Ú\.:\s]+)\nHemoglobina", r"GLICOSE\.\.[^\w]*(NEGATIVO|POSITIVO|[\d,\.]+)"], texto_completo)
+        urina_nitrito = extrair_valor([r"Nitrito\s*([A-ZÀ-Ú\.:\s]+)", r"Nitrito[^\w]*(NEGATIVO|POSITIVO|[\d,\.]+)"], texto_completo)
+
         # 3. Monta o texto limpo para o prontuário
         resumo_formatado = f"""RESUL. LABS - LAB. CRUZEIRO
 - Glicose (Soro): {glicose} mg/dL
@@ -136,7 +144,14 @@ if uploaded_file is not None:
 - T4 Livre: {t4} µg/dL
 - Hemoglobina Glicada (HbA1c): {hba1c}%
 - Creatinina Urinária: {creatinina_urinaria} mg/dL
-- Microalbuminúria: {microalbuminuria} mg/24h"""
+- Microalbuminúria: {microalbuminuria} mg/24h
+- Urina EAS - Cor: {urina_cor}
+- Urina EAS - Aspecto: {urina_aspecto}
+- Urina EAS - Densidade: {urina_densidade}
+- Urina EAS - pH: {urina_ph}
+- Urina EAS - Proteínas: {urina_proteinas}
+- Urina EAS - Glicose: {urina_glicose}
+- Urina EAS - Nitrito: {urina_nitrito}"""
 
         st.subheader("Resultado Pronto para o Prontuário:")
         st.text_area("Selecione, copie e cole abaixo:", resumo_formatado, height=350)
