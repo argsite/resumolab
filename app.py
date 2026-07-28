@@ -4,8 +4,8 @@ import re
 
 st.set_page_config(page_title="ResumoLab", page_icon="📋", layout="centered")
 
-st.title("📋 ResumoLab (Modo Local / Sem IA)")
-st.write("Faça o upload do PDF do laboratório para extrair os resultados de forma automática.")
+st.title("📋 ResumoLab")
+st.write("Faça o upload do PDF do laboratório para extrair os resultados")
 
 uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame", type=["pdf"])
 
