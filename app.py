@@ -87,14 +87,14 @@ if uploaded_file is not None:
         creatinina_urinaria = extrair_valor([r"CREATININA URINÁRIA.*?([\d,\.]+)", r"CREATININA URINÁRIA.*?([\d,\.]+)\s*mg/dL"], texto_completo)
         microalbuminuria = extrair_valor([r"MICROALBUMINÚRIA.*?([\d,\.]+)", r"MICROALBUMINÚRIA.*?([\d,\.]+)\s*mg/24h"], texto_completo)
 
-        # Parâmetros corrigidos do EAS focados estritamente na seção de Urina
-        urina_cor = extrair_valor([r"Exame Físico.*?Cor\s*\|\s*([A-ZÀ-Ú\s]+)\n", r"Cor\s*[:\|]\s*([A-ZÀ-Ú\s]+)\nAspecto"], texto_completo)
-        urina_aspecto = extrair_valor([r"Exame Físico.*?Aspecto\s*\|\s*([A-ZÀ-Ú\s]+)\n", r"Aspecto\s*[:\|]\s*([A-ZÀ-Ú\s]+)\nDensidade"], texto_completo)
-        urina_densidade = extrair_valor([r"Densidade\s*\|\s*([\d,\.]+)", r"Densidade\s*([0-9\.]+)"], texto_completo)
-        urina_ph = extrair_valor([r"PH\s*\|\s*([\d,\.]+)", r"PH\s*([0-9\.]+)"], texto_completo)
-        urina_proteinas = extrair_valor([r"Proteínas\s*\|\s*([A-ZÀ-Ú]+)", r"Proteínas\s*[:\|]\s*([A-ZÀ-Ú]+)"], texto_completo)
-        urina_glicose = extrair_valor([r"GLICOSE\.\.\s*\|\s*([A-ZÀ-Ú]+)", r"GLICOSE\.\.\s*[:\|]\s*([A-ZÀ-Ú]+)"], texto_completo)
-        urina_nitrito = extrair_valor([r"Nitrito\s*\|\s*\.:\s*([A-ZÀ-Ú]+)", r"Nitrito\s*[:\|]\s*([A-ZÀ-Ú]+)"], texto_completo)
+        # Padrões ajustados e blindados para a seção de EAS (Urina Tipo I)
+        urina_cor = extrair_valor([r"URINA TIPO I.*?Exame Físico.*?Cor\s*[:\|]\s*([A-Za-zÀ-Ú\s]+)(?=\nAspecto)", r"Exame Físico.*?Cor\s*\|\s*([A-Za-zÀ-Ú\s]+)(?=\n)"], texto_completo)
+        urina_aspecto = extrair_valor([r"URINA TIPO I.*?Aspecto\s*[:\|]\s*([A-Za-zÀ-Ú\s]+)(?=\nDensidade)", r"Aspecto\s*\|\s*([A-Za-zÀ-Ú\s]+)(?=\n)"], texto_completo)
+        urina_densidade = extrair_valor([r"Densidade\s*[:\|]\s*([\d,\.]+)", r"Densidade\s*([0-9\.]+)"], texto_completo)
+        urina_ph = extrair_valor([r"PH\s*[:\|]\s*([\d,\.]+)", r"PH\s*([0-9\.]+)"], texto_completo)
+        urina_proteinas = extrair_valor([r"Exame Químico.*?Proteínas\s*[:\|]\s*([A-Za-zÀ-Ú]+)", r"Proteínas\s*\|\s*([A-Za-zÀ-Ú]+)"], texto_completo)
+        urina_glicose = extrair_valor([r"GLICOSE\.\.\s*[:\|]\s*([A-Za-zÀ-Ú]+)", r"GLICOSE\.\.\s*\|\s*([A-Za-zÀ-Ú]+)"], texto_completo)
+        urina_nitrito = extrair_valor([r"Nitrito\s*[:\|]\s*\.*\s*([A-Za-zÀ-Ú]+)", r"Nitrito\s*\|\s*([A-Za-zÀ-Ú]+)"], texto_completo)
 
         # 3. Monta o texto limpo para o prontuário
         resumo_formatado = f"""RESUL. LABS - LAB. CRUZEIRO
