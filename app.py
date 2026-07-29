@@ -117,6 +117,26 @@ def aplicar_estilo():
             font-size: 0.84rem;
             margin-top: 0.45rem;
         }
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 140px;
+            padding: 0.32rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .status-ok {
+            color: #1f5d38;
+            background: rgba(67, 122, 34, 0.12);
+            border: 1px solid rgba(67, 122, 34, 0.18);
+        }
+        .status-miss {
+            color: #8a2432;
+            background: rgba(161, 53, 68, 0.12);
+            border: 1px solid rgba(161, 53, 68, 0.18);
+        }
         @media (max-width: 640px) {
             .hero-card { padding: 1rem; border-radius: 16px; }
             .hero-title { font-size: 1.55rem; }
