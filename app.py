@@ -5,6 +5,128 @@ from collections import OrderedDict
 import pdfplumber
 import streamlit as st
 
+
+def aplicar_estilo():
+    st.markdown(
+        """
+        <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        .stApp {
+            background:
+                radial-gradient(circle at top right, rgba(1, 105, 111, 0.08), transparent 28%),
+                linear-gradient(180deg, #f7f6f2 0%, #f2f0ea 100%);
+            color: #28251d;
+            font-family: 'Inter', sans-serif;
+        }
+        .block-container {
+            max-width: 980px;
+            padding-top: 2rem;
+            padding-bottom: 3rem;
+        }
+        h1, h2, h3 {
+            letter-spacing: -0.02em;
+        }
+        .hero-card {
+            background: rgba(249, 248, 245, 0.92);
+            border: 1px solid rgba(40, 37, 29, 0.08);
+            border-radius: 20px;
+            padding: 1.4rem 1.4rem 1.1rem 1.4rem;
+            box-shadow: 0 10px 30px rgba(40, 37, 29, 0.06);
+            margin-bottom: 1rem;
+        }
+        .hero-badge {
+            display: inline-block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #0c4e54;
+            background: rgba(1, 105, 111, 0.10);
+            border: 1px solid rgba(1, 105, 111, 0.12);
+            padding: 0.35rem 0.65rem;
+            border-radius: 999px;
+            margin-bottom: 0.85rem;
+        }
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 0.35rem 0;
+            color: #28251d;
+        }
+        .hero-subtitle {
+            font-size: 1rem;
+            color: #6f6c64;
+            margin: 0;
+            max-width: 62ch;
+        }
+        .section-card {
+            background: rgba(251, 251, 249, 0.95);
+            border: 1px solid rgba(40, 37, 29, 0.08);
+            border-radius: 18px;
+            padding: 1rem 1rem 0.75rem 1rem;
+            box-shadow: 0 6px 20px rgba(40, 37, 29, 0.05);
+            margin-top: 0.75rem;
+        }
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.65rem;
+            flex-wrap: wrap;
+        }
+        .result-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #28251d;
+            margin: 0;
+        }
+        .result-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.8rem;
+            color: #0c4e54;
+            background: rgba(1, 105, 111, 0.08);
+            border: 1px solid rgba(1, 105, 111, 0.1);
+            border-radius: 999px;
+            padding: 0.3rem 0.65rem;
+        }
+        .stTextArea textarea {
+            border-radius: 14px !important;
+            border: 1px solid rgba(40, 37, 29, 0.12) !important;
+            background: #fffdfa !important;
+            color: #28251d !important;
+            box-shadow: inset 0 1px 2px rgba(40, 37, 29, 0.03);
+            font-size: 0.96rem !important;
+            line-height: 1.5 !important;
+        }
+        .stFileUploader, .stCheckbox, .stExpander {
+            background: transparent;
+        }
+        div[data-testid="stDataFrame"] {
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(40, 37, 29, 0.08);
+            background: #fbfbf9;
+        }
+        div.stButton > button, .copy-btn {
+            border-radius: 12px !important;
+        }
+        .footer-note {
+            color: #7a7974;
+            font-size: 0.84rem;
+            margin-top: 0.45rem;
+        }
+        @media (max-width: 640px) {
+            .hero-card { padding: 1rem; border-radius: 16px; }
+            .hero-title { font-size: 1.55rem; }
+            .section-card { padding: 0.85rem; border-radius: 15px; }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 st.set_page_config(page_title="ResumoLab", page_icon="📋", layout="centered")
 
 LAB_CONFIGS = {
@@ -108,8 +230,17 @@ EXCLUDED_LINE_STARTS = [
     "EXAME REALIZADO NO LABORATORIO", "EXAME REALIZADO NO LABORATÓRIO",
 ]
 
-st.title("📋 ResumoLab")
-st.write("Faça o upload do PDF do laboratório para extrair os resultados e gerar um texto pronto para o prontuário.")
+aplicar_estilo()
+st.markdown(
+    """
+    <div class="hero-card">
+        <div class="hero-badge">Resumo clínico automatizado</div>
+        <h1 class="hero-title">📋 ResumoLab</h1>
+        <p class="hero-subtitle">Envie o PDF do laboratório para identificar os exames, montar um resumo objetivo e facilitar a cópia para o prontuário.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 def normalizar_texto(txt: str) -> str:
@@ -387,8 +518,10 @@ def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
     }
 
 
+st.markdown('<div class="section-card">', unsafe_allow_html=True)
 uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame", type=["pdf"])
 mostrar_debug = st.checkbox("Mostrar painel de depuração", value=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 if uploaded_file is not None:
     with st.spinner("Extraindo dados do PDF..."):
@@ -402,8 +535,18 @@ if uploaded_file is not None:
         debug_info = montar_debug(blocos, resultados, urina)
 
     st.success(f"Extração concluída. Laboratório identificado: {config_lab['nome_resumo']}")
-    st.subheader("Resultado pronto para o prontuário")
+    st.markdown(
+        f"""
+        <div class="section-card">
+            <div class="result-header">
+                <p class="result-title">Resultado pronto para o prontuário</p>
+                <span class="result-chip">Laboratório: {config_lab['nome_resumo']}</span>
+            </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.text_area("Selecione, copie e cole:", resumo_formatado, height=420)
+    st.markdown('<div class="footer-note">Copie o texto abaixo e cole diretamente no prontuário da unidade.</div></div>', unsafe_allow_html=True)
 
     text_to_copy = (
         resumo_formatado
