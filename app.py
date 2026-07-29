@@ -36,15 +36,7 @@ def aplicar_estilo():
             margin-bottom: 1rem;
         }
         .hero-badge {
-            display: inline-block;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: #0c4e54;
-            background: rgba(1, 105, 111, 0.10);
-            border: 1px solid rgba(1, 105, 111, 0.12);
-            padding: 0.35rem 0.65rem;
-            border-radius: 999px;
-            margin-bottom: 0.85rem;
+            display: none;
         }
         .hero-title {
             font-size: 2rem;
@@ -65,6 +57,29 @@ def aplicar_estilo():
             padding: 1rem 1rem 0.75rem 1rem;
             box-shadow: 0 6px 20px rgba(40, 37, 29, 0.05);
             margin-top: 0.75rem;
+        }
+        .upload-card {
+            background: linear-gradient(180deg, rgba(1, 105, 111, 0.07), rgba(1, 105, 111, 0.02));
+            border: 2px dashed rgba(1, 105, 111, 0.42);
+            border-radius: 18px;
+            padding: 1rem;
+            box-shadow: 0 10px 24px rgba(1, 105, 111, 0.06);
+        }
+        .upload-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0c4e54;
+            margin: 0 0 0.35rem 0;
+        }
+        .upload-subtitle {
+            color: #5f6d68;
+            font-size: 0.92rem;
+            margin: 0 0 0.85rem 0;
+        }
+        .upload-card [data-testid="stFileUploaderDropzone"] {
+            background: rgba(255,255,255,0.76);
+            border: 2px dashed rgba(1, 105, 111, 0.32);
+            border-radius: 16px;
         }
         .result-header {
             display: flex;
@@ -283,9 +298,7 @@ aplicar_estilo()
 st.markdown(
     """
     <div class="hero-card">
-        <div class="hero-badge">Resumo clínico automatizado</div>
         <h1 class="hero-title">📋 ResumoLab</h1>
-        <p class="hero-subtitle">Envie o PDF do laboratório para identificar os exames, montar um resumo objetivo e facilitar a cópia para o prontuário.</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -599,7 +612,10 @@ def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
     }
 
 
-st.markdown('<div class="section-card">', unsafe_allow_html=True)
+st.markdown(
+    '<div class="upload-card"><p class="upload-title">Envie aqui um novo resultado de exame em PDF</p><p class="upload-subtitle">Selecione ou arraste o arquivo para gerar um novo resumo.</p>',
+    unsafe_allow_html=True,
+)
 uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame", type=["pdf"])
 mostrar_debug = st.checkbox("Mostrar painel de depuração", value=True)
 st.markdown('</div>', unsafe_allow_html=True)
