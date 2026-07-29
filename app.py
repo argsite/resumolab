@@ -5,9 +5,7 @@ from collections import OrderedDict
 import pdfplumber
 import streamlit as st
 
-
 st.set_page_config(page_title="ResumoLab", page_icon="📋", layout="centered")
-
 
 LAB_CONFIGS = {
     "LABORATORIO CRUZEIRO": {
@@ -37,7 +35,6 @@ LAB_CONFIGS = {
         ],
     }
 }
-
 
 EXAMES_MAP = OrderedDict([
     ("glicose", {"label": "Glicose jejum", "secao": "Bioquímica", "unidade": "mg/dL"}),
@@ -80,7 +77,6 @@ EXAMES_MAP = OrderedDict([
     ("glicemia_media", {"label": "Glicemia estimada média", "secao": "Glicemia", "unidade": "mg/dL"}),
 ])
 
-
 URINA_MAP = OrderedDict([
     ("cor", "Cor"),
     ("aspecto", "Aspecto"),
@@ -103,16 +99,7 @@ URINA_MAP = OrderedDict([
     ("cilindros", "Cilindros"),
 ])
 
-
-IGNORE_VALUES = {
-    "",
-    "NAO ENCONTRADO",
-    "NÃO ENCONTRADO",
-    "NÃO INFORMADO",
-    "NAO INFORMADO",
-    "NONE",
-}
-
+IGNORE_VALUES = {"", "NAO ENCONTRADO", "NÃO ENCONTRADO", "NÃO INFORMADO", "NAO INFORMADO", "NONE"}
 
 EXCLUDED_LINE_STARTS = [
     "WWW.", "MATRIZ ", "TATUI", "BOITUVA", "CAPELA DO ALTO", "IPERO", "PORTO FELIZ",
@@ -120,7 +107,6 @@ EXCLUDED_LINE_STARTS = [
     "MEDICO(A):", "O VALOR PREDITIVO", "CONFERIDO:", "LIBERADO POR:",
     "EXAME REALIZADO NO LABORATORIO", "EXAME REALIZADO NO LABORATÓRIO",
 ]
-
 
 st.title("📋 ResumoLab")
 st.write("Faça o upload do PDF do laboratório para extrair os resultados e gerar um texto pronto para o prontuário.")
@@ -228,7 +214,6 @@ def buscar_linha_campo(bloco: str, nome_campo: str) -> str | None:
                 valor = m.group(1).strip() if m else None
             if valor:
                 valor = re.split(r"\s{2,}", valor)[0].strip()
-                valor = re.sub(r"\b(Negativo|Normal|Ausentes?|Limpido|Límpido|Amarelo citrina)\b.*$", lambda x: x.group(1), valor, flags=re.IGNORECASE) if len(valor.split()) > 3 else valor
                 return limpar_valor(valor)
     return None
 
@@ -236,18 +221,26 @@ def buscar_linha_campo(bloco: str, nome_campo: str) -> str | None:
 def extrair_hemograma_detalhado(bloco: str) -> dict:
     retorno = {}
 
-    def extrair_duplo(nome_base, chaves):
-        for nome in chaves:
-            padroes = [
-                rf"{nome}\s*[\. :]+([\d,]+)\s*%\s*([\d\.]+)",
-                rf"{nome}\s*[\. :]+([\d,]+)\s*%\s*([\d\.,]+)",
-            ]
-            for padrao in padroes:
-                m = re.search(padrao, bloco, re.IGNORECASE)
-                if m:
-                    retorno[f"{nome_base}_perc"] = limpar_valor(m.group(1))
-                    retorno[f"{nome_base}_abs"] = limpar_valor(m.group(2))
-                    return
+    def extrair_duplo(nome_base: str, aliases: list[str]):
+        for alias in aliases:
+            padrao = rf"{alias}\s*[\. :]+([\d,]+)\s*%\s*([\d\.]+)"
+            m = re.search(padrao, bloco, re.IGNORECASE)
+            if m:
+                retorno[f"{nome_base}_perc"] = limpar_valor(m.group(1))
+                retorno[f"{nome_base}_abs"] = limpar_valor(m.group(2))
+                return
+
+        linha_match = None
+        for linha in bloco.splitlines():
+            linha_can = canonical(linha)
+            if any(canonical(alias) in linha_can for alias in aliases):
+                linha_match = linha
+                break
+        if linha_match:
+            nums = re.findall(r"\d+[\d\.,]*", linha_match)
+            if len(nums) >= 2:
+                retorno[f"{nome_base}_perc"] = limpar_valor(nums[0])
+                retorno[f"{nome_base}_abs"] = limpar_valor(nums[1])
 
     extrair_duplo("segmentados", ["SEGMENTADOS"])
     extrair_duplo("linfocitos", ["LINFÓCITOS TÍPICOS", "LINFOCITOS TIPICOS"])
@@ -361,8 +354,11 @@ def montar_resumo(nome_lab: str, resultados: dict, urina: dict) -> str:
 def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
     exames_detectados = []
     for titulo in blocos:
-        linhas = len(blocos[titulo].splitlines())
-        exames_detectados.append({"exame": titulo, "detectado": True, "linhas_bloco": linhas})
+        exames_detectados.append({
+            "exame": titulo,
+            "detectado": True,
+            "linhas_bloco": len(blocos[titulo].splitlines())
+        })
 
     itens_resultado = []
     for chave, meta in EXAMES_MAP.items():
@@ -393,7 +389,6 @@ def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
 
 uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame", type=["pdf"])
 mostrar_debug = st.checkbox("Mostrar painel de depuração", value=True)
-mostrar_blocos = st.checkbox("Mostrar blocos brutos dos exames", value=False)
 
 if uploaded_file is not None:
     with st.spinner("Extraindo dados do PDF..."):
@@ -427,21 +422,12 @@ if uploaded_file is not None:
     if mostrar_debug:
         st.subheader("Painel de depuração")
         st.caption("Use esta área para ver quais exames foram detectados e quais campos ainda precisam de ajuste.")
-
         st.markdown("**Exames detectados no PDF**")
         st.dataframe(debug_info["exames_detectados"], use_container_width=True, hide_index=True)
-
         st.markdown("**Campos gerais**")
         st.dataframe(debug_info["itens_resultado"], use_container_width=True, hide_index=True)
-
         st.markdown("**Campos do EAS**")
         st.dataframe(debug_info["itens_urina"], use_container_width=True, hide_index=True)
-
-    if mostrar_blocos:
-        st.subheader("Blocos brutos detectados")
-        for titulo, bloco in blocos.items():
-            with st.expander(titulo, expanded=False):
-                st.code(bloco)
 
     with st.expander("Texto bruto extraído do PDF", expanded=False):
         st.text(texto_completo[:30000])
