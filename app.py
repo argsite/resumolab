@@ -54,6 +54,16 @@ EXAMES_MAP = OrderedDict([
     ("hematocrito", {"label": "Hematócrito", "secao": "Hemograma", "unidade": "%"}),
     ("leucocitos", {"label": "Leucócitos", "secao": "Hemograma", "unidade": ""}),
     ("plaquetas", {"label": "Plaquetas", "secao": "Hemograma", "unidade": ""}),
+    ("segmentados_perc", {"label": "Segmentados", "secao": "Hemograma", "unidade": "%"}),
+    ("segmentados_abs", {"label": "Segmentados absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
+    ("linfocitos_perc", {"label": "Linfócitos típicos", "secao": "Hemograma", "unidade": "%"}),
+    ("linfocitos_abs", {"label": "Linfócitos típicos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
+    ("monocitos_perc", {"label": "Monócitos", "secao": "Hemograma", "unidade": "%"}),
+    ("monocitos_abs", {"label": "Monócitos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
+    ("eosinofilos_perc", {"label": "Eosinófilos", "secao": "Hemograma", "unidade": "%"}),
+    ("eosinofilos_abs", {"label": "Eosinófilos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
+    ("basofilos_perc", {"label": "Basófilos", "secao": "Hemograma", "unidade": "%"}),
+    ("basofilos_abs", {"label": "Basófilos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
     ("acido_urico", {"label": "Ácido úrico", "secao": "Bioquímica", "unidade": "mg/dL"}),
     ("tgo", {"label": "TGO (AST)", "secao": "Função hepática", "unidade": "U/L"}),
     ("tgp", {"label": "TGP (ALT)", "secao": "Função hepática", "unidade": "U/L"}),
@@ -187,6 +197,8 @@ def buscar_padrao(texto: str, padroes: list[str], flags=re.IGNORECASE):
     for padrao in padroes:
         m = re.search(padrao, texto, flags)
         if m:
+            if not m.groups():
+                continue
             valor = m.group(1).strip(" .:-")
             if valor:
                 return valor
@@ -219,6 +231,30 @@ def buscar_linha_campo(bloco: str, nome_campo: str) -> str | None:
                 valor = re.sub(r"\b(Negativo|Normal|Ausentes?|Limpido|Límpido|Amarelo citrina)\b.*$", lambda x: x.group(1), valor, flags=re.IGNORECASE) if len(valor.split()) > 3 else valor
                 return limpar_valor(valor)
     return None
+
+
+def extrair_hemograma_detalhado(bloco: str) -> dict:
+    retorno = {}
+
+    def extrair_duplo(nome_base, chaves):
+        for nome in chaves:
+            padroes = [
+                rf"{nome}\s*[\. :]+([\d,]+)\s*%\s*([\d\.]+)",
+                rf"{nome}\s*[\. :]+([\d,]+)\s*%\s*([\d\.,]+)",
+            ]
+            for padrao in padroes:
+                m = re.search(padrao, bloco, re.IGNORECASE)
+                if m:
+                    retorno[f"{nome_base}_perc"] = limpar_valor(m.group(1))
+                    retorno[f"{nome_base}_abs"] = limpar_valor(m.group(2))
+                    return
+
+    extrair_duplo("segmentados", ["SEGMENTADOS"])
+    extrair_duplo("linfocitos", ["LINFÓCITOS TÍPICOS", "LINFOCITOS TIPICOS"])
+    extrair_duplo("monocitos", ["MONÓCITOS", "MONOCITOS"])
+    extrair_duplo("eosinofilos", ["EOSINÓFILOS", "EOSINOFILOS"])
+    extrair_duplo("basofilos", ["BASÓFILOS", "BASOFILOS"])
+    return retorno
 
 
 def extrair_urina(bloco: str) -> dict:
@@ -258,7 +294,7 @@ def extrair_resultados(blocos: dict) -> dict:
     resultados = {}
 
     resultados["glicose"] = limpar_valor(buscar_padrao(blocos.get("GLICOSE JEJUM", ""), [r"GLICOSE\s*\(Soro\)\s*[\. :]+([\d,\.]+)"]))
-    resultados["ureia"] = limpar_valor(buscar_padrao(blocos.get("UREIA ( SORO )", ""), [r"Ureia|Uréia", r"Ureia\s*[\. :]+([\d,\.]+)", r"Uréia\s*[\. :]+([\d,\.]+)"]))
+    resultados["ureia"] = limpar_valor(buscar_padrao(blocos.get("UREIA ( SORO )", ""), [r"Ureia\s*[\. :]+([\d,\.]+)", r"Uréia\s*[\. :]+([\d,\.]+)"]))
     resultados["creatinina"] = limpar_valor(buscar_padrao(blocos.get("CREATININA ( SORO )", ""), [r"Resultado:?\s*([\d,\.]+)\s*mg/dL"]))
     resultados["tfge"] = limpar_valor(buscar_padrao(blocos.get("CREATININA ( SORO )", ""), [r"TFGe\).*?([\d,\.]+)\s*ml/min/1,73m", r"estimada\(TFGe\).*?([\d,\.]+)\s*ml/min/1,73m"], flags=re.IGNORECASE | re.DOTALL))
     resultados["colesterol_total"] = limpar_valor(buscar_padrao(blocos.get("COLESTEROL TOTAL", ""), [r"COLESTEROL TOTAL\s*[\. :]+([\d,\.]+)\s*mg/dL"]))
@@ -273,6 +309,7 @@ def extrair_resultados(blocos: dict) -> dict:
     resultados["hematocrito"] = limpar_valor(buscar_padrao(hemograma, [r"HEMATÓCRITO\s*[\. :]+([\d,\.]+)\s*%"]))
     resultados["leucocitos"] = limpar_valor(buscar_padrao(hemograma, [r"LEUCÓCITOS\s*[\. :]+([\d\.]+)"]))
     resultados["plaquetas"] = limpar_valor(buscar_padrao(hemograma, [r"PLAQUETAS\s*[\. :]+([\d\.]+)"]))
+    resultados.update(extrair_hemograma_detalhado(hemograma))
 
     resultados["acido_urico"] = limpar_valor(buscar_padrao(blocos.get("ACIDO URICO SERICO", ""), [r"ÁCIDO ÚRICO.*?([\d,\.]+)\s*mg/dl", r"ACIDO URICO.*?([\d,\.]+)\s*mg/dl"], flags=re.IGNORECASE | re.DOTALL))
     resultados["tgo"] = limpar_valor(buscar_padrao(blocos.get("TGO (AST)", ""), [r"([\d,\.]+)\s*U/L"]))
