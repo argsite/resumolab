@@ -147,8 +147,11 @@ LAB_CONFIGS = {
             "TGO (AST)",
             "TGP (ALT)",
             "BILIRRUBINAS TOTAL E FRAÇÕES",
+            "CÁLCIO IONIZADO",
             "SÓDIO",
             "POTÁSSIO",
+            "gasometria arterial",
+            "MAGNESIO",
             "VITAMINA B12",
             "VITAMINA D - 25 HIDROXI",
             "TSH - HORMÔNIO TIREOESTIMULANTE",
@@ -161,6 +164,7 @@ LAB_CONFIGS = {
 EXAMES_MAP = OrderedDict([
     ("glicose", {"label": "Glicose jejum", "secao": "Bioquímica", "unidade": "mg/dL"}),
     ("ureia", {"label": "Ureia", "secao": "Bioquímica", "unidade": "mg/dL"}),
+    ("lactato", {"label": "Lactato", "secao": "Bioquímica", "unidade": "mg/dL"}),
     ("creatinina", {"label": "Creatinina", "secao": "Bioquímica", "unidade": "mg/dL"}),
     ("tfge", {"label": "TFGe", "secao": "Bioquímica", "unidade": "mL/min/1,73m²"}),
     ("colesterol_total", {"label": "Colesterol total", "secao": "Lipidograma", "unidade": "mg/dL"}),
@@ -173,10 +177,18 @@ EXAMES_MAP = OrderedDict([
     ("hematocrito", {"label": "Hematócrito", "secao": "Hemograma", "unidade": "%"}),
     ("leucocitos", {"label": "Leucócitos", "secao": "Hemograma", "unidade": ""}),
     ("plaquetas", {"label": "Plaquetas", "secao": "Hemograma", "unidade": ""}),
+    ("mielocitos_perc", {"label": "Mielócitos", "secao": "Hemograma", "unidade": "%"}),
+    ("mielocitos_abs", {"label": "Mielócitos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
+    ("metamielocitos_perc", {"label": "Metamielócitos", "secao": "Hemograma", "unidade": "%"}),
+    ("metamielocitos_abs", {"label": "Metamielócitos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
+    ("bastonetes_perc", {"label": "Bastonetes", "secao": "Hemograma", "unidade": "%"}),
+    ("bastonetes_abs", {"label": "Bastonetes absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
     ("segmentados_perc", {"label": "Segmentados", "secao": "Hemograma", "unidade": "%"}),
     ("segmentados_abs", {"label": "Segmentados absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
     ("linfocitos_perc", {"label": "Linfócitos típicos", "secao": "Hemograma", "unidade": "%"}),
     ("linfocitos_abs", {"label": "Linfócitos típicos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
+    ("linfocitos_atipicos_perc", {"label": "Linfócitos atípicos", "secao": "Hemograma", "unidade": "%"}),
+    ("linfocitos_atipicos_abs", {"label": "Linfócitos atípicos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
     ("monocitos_perc", {"label": "Monócitos", "secao": "Hemograma", "unidade": "%"}),
     ("monocitos_abs", {"label": "Monócitos absolutos", "secao": "Hemograma", "unidade": "/mm3"}),
     ("eosinofilos_perc", {"label": "Eosinófilos", "secao": "Hemograma", "unidade": "%"}),
@@ -189,14 +201,23 @@ EXAMES_MAP = OrderedDict([
     ("bilirrubina_total", {"label": "Bilirrubina total", "secao": "Função hepática", "unidade": "mg/dL"}),
     ("bilirrubina_direta", {"label": "Bilirrubina direta", "secao": "Função hepática", "unidade": "mg/dL"}),
     ("bilirrubina_indireta", {"label": "Bilirrubina indireta", "secao": "Função hepática", "unidade": "mg/dL"}),
+    ("calcio_ionizado", {"label": "Cálcio ionizado", "secao": "Eletrólitos", "unidade": "mmol/L"}),
     ("sodio", {"label": "Sódio", "secao": "Eletrólitos", "unidade": "mEq/L"}),
     ("potassio", {"label": "Potássio", "secao": "Eletrólitos", "unidade": "mEq/L"}),
+    ("magnesio", {"label": "Magnésio", "secao": "Eletrólitos", "unidade": "mg/dL"}),
     ("vitamina_b12", {"label": "Vitamina B12", "secao": "Vitaminas e hormônios", "unidade": "pg/mL"}),
     ("vitamina_d", {"label": "Vitamina D", "secao": "Vitaminas e hormônios", "unidade": "ng/mL"}),
     ("tsh", {"label": "TSH", "secao": "Vitaminas e hormônios", "unidade": "µUI/mL"}),
     ("t4", {"label": "T4", "secao": "Vitaminas e hormônios", "unidade": "µg/dL"}),
     ("hba1c", {"label": "Hemoglobina glicada (HbA1c)", "secao": "Glicemia", "unidade": "%"}),
     ("glicemia_media", {"label": "Glicemia estimada média", "secao": "Glicemia", "unidade": "mg/dL"}),
+    ("gaso_ph", {"label": "Gasometria arterial - pH", "secao": "Gasometria arterial", "unidade": ""}),
+    ("gaso_pco2", {"label": "Gasometria arterial - pCO2", "secao": "Gasometria arterial", "unidade": ""}),
+    ("gaso_po2", {"label": "Gasometria arterial - pO2", "secao": "Gasometria arterial", "unidade": ""}),
+    ("gaso_hco3", {"label": "Gasometria arterial - HCO3", "secao": "Gasometria arterial", "unidade": ""}),
+    ("gaso_tco2", {"label": "Gasometria arterial - TCO2", "secao": "Gasometria arterial", "unidade": ""}),
+    ("gaso_be", {"label": "Gasometria arterial - BE", "secao": "Gasometria arterial", "unidade": ""}),
+    ("gaso_so2", {"label": "Gasometria arterial - sO2", "secao": "Gasometria arterial", "unidade": "%"}),
 ])
 
 URINA_MAP = OrderedDict([
@@ -372,12 +393,35 @@ def extrair_hemograma_detalhado(bloco: str) -> dict:
             if len(nums) >= 2:
                 retorno[f"{nome_base}_perc"] = limpar_valor(nums[0])
                 retorno[f"{nome_base}_abs"] = limpar_valor(nums[1])
+            elif len(nums) == 1:
+                retorno[f"{nome_base}_perc"] = limpar_valor(nums[0])
+                retorno[f"{nome_base}_abs"] = None
 
+    extrair_duplo("mielocitos", ["MIELÓCITOS", "MIELOCITOS"])
+    extrair_duplo("metamielocitos", ["METAMIELÓCITOS", "METAMIELOCITOS"])
+    extrair_duplo("bastonetes", ["BASTONETES"])
     extrair_duplo("segmentados", ["SEGMENTADOS"])
     extrair_duplo("linfocitos", ["LINFÓCITOS TÍPICOS", "LINFOCITOS TIPICOS"])
+    extrair_duplo("linfocitos_atipicos", ["LINFÓCITOS ATÍPICOS", "LINFOCITOS ATIPICOS"])
     extrair_duplo("monocitos", ["MONÓCITOS", "MONOCITOS"])
     extrair_duplo("eosinofilos", ["EOSINÓFILOS", "EOSINOFILOS"])
     extrair_duplo("basofilos", ["BASÓFILOS", "BASOFILOS"])
+    return retorno
+
+
+def extrair_gasometria(bloco: str) -> dict:
+    retorno = {}
+    mapa = {
+        "gaso_ph": [r"\bph\s*:?\s*([\d,.]+)"],
+        "gaso_pco2": [r"\bpco2\s*:?\s*([\d,.]+)"],
+        "gaso_po2": [r"\bpo2\s*:?\s*([\d,.]+)"],
+        "gaso_hco3": [r"\bhco3\s*:?\s*([\d,.]+)"],
+        "gaso_tco2": [r"\btco2\s*:?\s*([\d,.]+)"],
+        "gaso_be": [r"\bbe\s*:?\s*([\d,.]+)"],
+        "gaso_so2": [r"\bso2\s*:?\s*([\d,.]+)"],
+    }
+    for chave, padroes in mapa.items():
+        retorno[chave] = limpar_valor(buscar_padrao(bloco, padroes, flags=re.IGNORECASE))
     return retorno
 
 
@@ -419,6 +463,7 @@ def extrair_resultados(blocos: dict) -> dict:
 
     resultados["glicose"] = limpar_valor(buscar_padrao(blocos.get("GLICOSE JEJUM", ""), [r"GLICOSE\s*\(Soro\)\s*[\. :]+([\d,\.]+)"]))
     resultados["ureia"] = limpar_valor(buscar_padrao(blocos.get("UREIA ( SORO )", ""), [r"Ureia\s*[\. :]+([\d,\.]+)", r"Uréia\s*[\. :]+([\d,\.]+)"]))
+    resultados["lactato"] = limpar_valor(buscar_padrao(blocos.get("LACTATO", ""), [r"LACTATO\s*[\. :]+([\d,\.]+)\s*mg/dl", r"([\d,\.]+)\s*mg/dl"], flags=re.IGNORECASE))
     resultados["creatinina"] = limpar_valor(buscar_padrao(blocos.get("CREATININA ( SORO )", ""), [r"Resultado:?\s*([\d,\.]+)\s*mg/dL"]))
     resultados["tfge"] = limpar_valor(buscar_padrao(blocos.get("CREATININA ( SORO )", ""), [r"TFGe\).*?([\d,\.]+)\s*ml/min/1,73m", r"estimada\(TFGe\).*?([\d,\.]+)\s*ml/min/1,73m"], flags=re.IGNORECASE | re.DOTALL))
     resultados["colesterol_total"] = limpar_valor(buscar_padrao(blocos.get("COLESTEROL TOTAL", ""), [r"COLESTEROL TOTAL\s*[\. :]+([\d,\.]+)\s*mg/dL"]))
@@ -444,8 +489,10 @@ def extrair_resultados(blocos: dict) -> dict:
     resultados["bilirrubina_direta"] = limpar_valor(buscar_padrao(bil, [r"BILIRRUBINA DIRETA[\. :]+([\d,\.]+)\s*mg/dL"]))
     resultados["bilirrubina_indireta"] = limpar_valor(buscar_padrao(bil, [r"BILIRRUBINA INDIRETA[\. :]+([\d,\.]+)\s*mg/dL"]))
 
+    resultados["calcio_ionizado"] = limpar_valor(buscar_padrao(blocos.get("CÁLCIO IONIZADO", ""), [r"CALCIO IONICO[\.\s:]+([\d,\.]+)\s*mmol/L", r"([\d,\.]+)\s*mmol/L"], flags=re.IGNORECASE))
     resultados["sodio"] = limpar_valor(buscar_padrao(blocos.get("SÓDIO", ""), [r"([\d,\.]+)\s*mEq/L"], flags=re.IGNORECASE | re.DOTALL))
     resultados["potassio"] = limpar_valor(buscar_padrao(blocos.get("POTÁSSIO", ""), [r"([\d,\.]+)\s*mEq/l"], flags=re.IGNORECASE | re.DOTALL))
+    resultados["magnesio"] = limpar_valor(buscar_padrao(blocos.get("MAGNESIO", ""), [r"MAGNESIO\s*[\. :]+([\d,\.]+)\s*mg/dl", r"([\d,\.]+)\s*mg/dl"], flags=re.IGNORECASE))
     resultados["vitamina_b12"] = limpar_valor(buscar_padrao(blocos.get("VITAMINA B12", ""), [r"Resultado\s*([\d,\.]+)\s*pg/mL"]))
     resultados["vitamina_d"] = limpar_valor(buscar_padrao(blocos.get("VITAMINA D - 25 HIDROXI", ""), [r"Resultado.*?([\d,\.]+)\s*ng/mL", r"\n([\d,\.]+)\s*ng/mL"], flags=re.IGNORECASE | re.DOTALL))
     resultados["tsh"] = limpar_valor(buscar_padrao(blocos.get("TSH - HORMÔNIO TIREOESTIMULANTE", ""), [r"Resultado\s*([\d,\.]+)\s*uUI/mL"]))
@@ -454,6 +501,7 @@ def extrair_resultados(blocos: dict) -> dict:
     hba1c_bloco = blocos.get("HEMOGLOBINA GLICADA", "")
     resultados["hba1c"] = limpar_valor(buscar_padrao(hba1c_bloco, [r"Hb A1c:\s*([\d,\.]+)\s*%"]))
     resultados["glicemia_media"] = limpar_valor(buscar_padrao(hba1c_bloco, [r"Glicemia estimada\s*m[eé]dia:\s*([\d,\.]+)\s*mg/dL"], flags=re.IGNORECASE | re.DOTALL))
+    resultados.update(extrair_gasometria(blocos.get("gasometria arterial", "")))
 
     return resultados
 
