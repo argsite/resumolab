@@ -312,12 +312,17 @@ def canonical(txt: str) -> str:
     return txt
 
 
-def detectar_laboratorio(texto: str) -> str:
+def detectar_laboratorio(texto: str):
     texto_can = canonical(texto)
-    for chave in LAB_CONFIGS:
-        if chave in texto_can:
-            return chave
-    return "LABORATORIO CRUZEIRO"
+    for chave, config in LAB_CONFIGS.items():
+        for token in config.get("match_tokens", []):
+            if canonical(token) in texto_can:
+                return chave
+    return next(iter(LAB_CONFIGS.keys()))
+
+
+def obter_config_lab(chave_lab):
+    return LAB_CONFIGS.get(chave_lab, next(iter(LAB_CONFIGS.values())))
 
 
 def extrair_texto_pdf(uploaded_file):
@@ -573,7 +578,7 @@ def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
         itens_resultado.append({
             "secao": meta["secao"],
             "campo": meta["label"],
-            "status": "Encontrado" if valor else "Não encontrado",
+            "status": "Encontrado" if valor else "Não consta no exame",
             "valor": valor or "",
         })
 
@@ -583,7 +588,7 @@ def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
         itens_urina.append({
             "secao": "EAS",
             "campo": label,
-            "status": "Encontrado" if valor else "Não encontrado",
+            "status": "Encontrado" if valor else "Não consta no exame",
             "valor": valor or "",
         })
 
@@ -603,7 +608,7 @@ if uploaded_file is not None:
     with st.spinner("Extraindo dados do PDF..."):
         paginas, texto_completo = extrair_texto_pdf(uploaded_file)
         laboratorio = detectar_laboratorio(texto_completo)
-        config_lab = LAB_CONFIGS[laboratorio]
+        config_lab = obter_config_lab(laboratorio)
         blocos = extrair_blocos_por_titulos(texto_completo, config_lab["titulos_exames"])
         resultados = extrair_resultados(blocos)
         urina = extrair_urina(blocos.get("URINA TIPO I (EAS)", ""))
