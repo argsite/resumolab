@@ -150,8 +150,14 @@ def aplicar_estilo():
 st.set_page_config(page_title="ResumoLab", page_icon="📋", layout="centered")
 
 LAB_CONFIGS = {
-    "LABORATORIO CRUZEIRO": {
+    "cruzeiro": {
         "nome_resumo": "LAB. CRUZEIRO",
+        "match_tokens": [
+            "LABORATORIO CRUZEIRO",
+            "WWW.LABORATORIOCRUZEIRO.COM.BR",
+            "LABORATÓRIO CRUZEIRO",
+            "CRUZEIRO",
+        ],
         "titulos_exames": [
             "GLICOSE JEJUM",
             "URINA TIPO I (EAS)",
@@ -161,6 +167,8 @@ LAB_CONFIGS = {
             "LDL - COLESTEROL",
             "VLDL - COLESTEROL",
             "TRIGLICÉRIDES",
+            "DETERMINAÇÃO QUANTITATIVA DE PROTEINA C REATIVA",
+            "LACTATO",
             "UREIA ( SORO )",
             "CREATININA ( SORO )",
             "ACIDO URICO SERICO",
