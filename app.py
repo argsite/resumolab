@@ -1,169 +1,410 @@
-import streamlit as st
-import pdfplumber
 import re
+import unicodedata
+from collections import OrderedDict
+
+import pdfplumber
+import streamlit as st
+
 
 st.set_page_config(page_title="ResumoLab", page_icon="📋", layout="centered")
 
+
+LAB_CONFIGS = {
+    "LABORATORIO CRUZEIRO": {
+        "nome_resumo": "LAB. CRUZEIRO",
+        "titulos_exames": [
+            "GLICOSE JEJUM",
+            "URINA TIPO I (EAS)",
+            "HEMOGRAMA COMPLETO",
+            "COLESTEROL TOTAL",
+            "HDL - COLESTEROL",
+            "LDL - COLESTEROL",
+            "VLDL - COLESTEROL",
+            "TRIGLICÉRIDES",
+            "UREIA ( SORO )",
+            "CREATININA ( SORO )",
+            "ACIDO URICO SERICO",
+            "TGO (AST)",
+            "TGP (ALT)",
+            "BILIRRUBINAS TOTAL E FRAÇÕES",
+            "SÓDIO",
+            "POTÁSSIO",
+            "VITAMINA B12",
+            "VITAMINA D - 25 HIDROXI",
+            "TSH - HORMÔNIO TIREOESTIMULANTE",
+            "T4- TETRAIODOTIROXINA",
+            "HEMOGLOBINA GLICADA",
+        ],
+    }
+}
+
+
+EXAMES_MAP = OrderedDict([
+    ("glicose", {"label": "Glicose jejum", "secao": "Bioquímica", "unidade": "mg/dL"}),
+    ("ureia", {"label": "Ureia", "secao": "Bioquímica", "unidade": "mg/dL"}),
+    ("creatinina", {"label": "Creatinina", "secao": "Bioquímica", "unidade": "mg/dL"}),
+    ("tfge", {"label": "TFGe", "secao": "Bioquímica", "unidade": "mL/min/1,73m²"}),
+    ("colesterol_total", {"label": "Colesterol total", "secao": "Lipidograma", "unidade": "mg/dL"}),
+    ("hdl", {"label": "HDL", "secao": "Lipidograma", "unidade": "mg/dL"}),
+    ("ldl", {"label": "LDL", "secao": "Lipidograma", "unidade": "mg/dL"}),
+    ("vldl", {"label": "VLDL", "secao": "Lipidograma", "unidade": "mg/dL"}),
+    ("triglicerides", {"label": "Triglicérides", "secao": "Lipidograma", "unidade": "mg/dL"}),
+    ("hemacias", {"label": "Hemácias", "secao": "Hemograma", "unidade": "M/mm3"}),
+    ("hemoglobina", {"label": "Hemoglobina", "secao": "Hemograma", "unidade": "g/dL"}),
+    ("hematocrito", {"label": "Hematócrito", "secao": "Hemograma", "unidade": "%"}),
+    ("leucocitos", {"label": "Leucócitos", "secao": "Hemograma", "unidade": ""}),
+    ("plaquetas", {"label": "Plaquetas", "secao": "Hemograma", "unidade": ""}),
+    ("acido_urico", {"label": "Ácido úrico", "secao": "Bioquímica", "unidade": "mg/dL"}),
+    ("tgo", {"label": "TGO (AST)", "secao": "Função hepática", "unidade": "U/L"}),
+    ("tgp", {"label": "TGP (ALT)", "secao": "Função hepática", "unidade": "U/L"}),
+    ("bilirrubina_total", {"label": "Bilirrubina total", "secao": "Função hepática", "unidade": "mg/dL"}),
+    ("bilirrubina_direta", {"label": "Bilirrubina direta", "secao": "Função hepática", "unidade": "mg/dL"}),
+    ("bilirrubina_indireta", {"label": "Bilirrubina indireta", "secao": "Função hepática", "unidade": "mg/dL"}),
+    ("sodio", {"label": "Sódio", "secao": "Eletrólitos", "unidade": "mEq/L"}),
+    ("potassio", {"label": "Potássio", "secao": "Eletrólitos", "unidade": "mEq/L"}),
+    ("vitamina_b12", {"label": "Vitamina B12", "secao": "Vitaminas e hormônios", "unidade": "pg/mL"}),
+    ("vitamina_d", {"label": "Vitamina D", "secao": "Vitaminas e hormônios", "unidade": "ng/mL"}),
+    ("tsh", {"label": "TSH", "secao": "Vitaminas e hormônios", "unidade": "µUI/mL"}),
+    ("t4", {"label": "T4", "secao": "Vitaminas e hormônios", "unidade": "µg/dL"}),
+    ("hba1c", {"label": "Hemoglobina glicada (HbA1c)", "secao": "Glicemia", "unidade": "%"}),
+    ("glicemia_media", {"label": "Glicemia estimada média", "secao": "Glicemia", "unidade": "mg/dL"}),
+])
+
+
+URINA_MAP = OrderedDict([
+    ("cor", "Cor"),
+    ("aspecto", "Aspecto"),
+    ("densidade", "Densidade"),
+    ("ph", "pH"),
+    ("proteinas", "Proteínas"),
+    ("corpos_cetonicos", "Corpos cetônicos"),
+    ("glicose", "Glicose"),
+    ("hemoglobina", "Hemoglobina"),
+    ("pigmentos_biliares", "Pigmentos biliares"),
+    ("urobilinogenio", "Urobilinogênio"),
+    ("nitrito", "Nitrito"),
+    ("leucocitos", "Leucócitos"),
+    ("hemacias", "Hemácias"),
+    ("bacterias", "Bactérias"),
+    ("cristais", "Cristais"),
+    ("celulas_epiteliais", "Células epiteliais"),
+    ("filamento_muco", "Filamento de muco"),
+    ("leveduras", "Leveduras"),
+    ("cilindros", "Cilindros"),
+])
+
+
+IGNORE_VALUES = {
+    "",
+    "NAO ENCONTRADO",
+    "NÃO ENCONTRADO",
+    "NÃO INFORMADO",
+    "NAO INFORMADO",
+    "NONE",
+}
+
+
+EXCLUDED_LINE_STARTS = [
+    "WWW.", "MATRIZ ", "TATUI", "BOITUVA", "CAPELA DO ALTO", "IPERO", "PORTO FELIZ",
+    "PAGINA ", "#ASSINATURA#", "PACIENTE :", "DATA NASC:", "CONVENIO :", "MÉDICO(A):",
+    "MEDICO(A):", "O VALOR PREDITIVO", "CONFERIDO:", "LIBERADO POR:",
+    "EXAME REALIZADO NO LABORATORIO", "EXAME REALIZADO NO LABORATÓRIO",
+]
+
+
 st.title("📋 ResumoLab")
-st.write("Faça o upload do PDF do laboratório para extrair os resultados.")
+st.write("Faça o upload do PDF do laboratório para extrair os resultados e gerar um texto pronto para o prontuário.")
+
+
+def normalizar_texto(txt: str) -> str:
+    if not txt:
+        return ""
+    txt = txt.replace("\xa0", " ")
+    txt = txt.replace("µ", "u").replace("μ", "u")
+    txt = re.sub(r"[ \t]+", " ", txt)
+    txt = re.sub(r"\n{2,}", "\n", txt)
+    return txt.strip()
+
+
+def remover_acentos(txt: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", txt) if unicodedata.category(c) != "Mn")
+
+
+def canonical(txt: str) -> str:
+    txt = remover_acentos(txt.upper().strip())
+    txt = re.sub(r"\s+", " ", txt)
+    return txt
+
+
+def detectar_laboratorio(texto: str) -> str:
+    texto_can = canonical(texto)
+    for chave in LAB_CONFIGS:
+        if chave in texto_can:
+            return chave
+    return "LABORATORIO CRUZEIRO"
+
+
+def extrair_texto_pdf(uploaded_file):
+    paginas = []
+    texto_total = []
+    with pdfplumber.open(uploaded_file) as pdf:
+        for i, pagina in enumerate(pdf.pages, start=1):
+            txt = pagina.extract_text() or ""
+            txt = normalizar_texto(txt)
+            paginas.append((i, txt))
+            texto_total.append(txt)
+    return paginas, "\n".join(texto_total)
+
+
+def linha_util(linha: str) -> bool:
+    l = canonical(linha)
+    if not l:
+        return False
+    if set(l.replace(" ", "")) <= {"_", "-", ".", ":", "/"}:
+        return False
+    return not any(l.startswith(canonical(prefixo)) for prefixo in EXCLUDED_LINE_STARTS)
+
+
+def extrair_blocos_por_titulos(texto: str, titulos: list[str]) -> dict:
+    linhas = [ln.rstrip() for ln in texto.splitlines() if linha_util(ln)]
+    linhas_can = [canonical(ln) for ln in linhas]
+    titulos_can = {canonical(t): t for t in titulos}
+
+    posicoes = []
+    for i, linha in enumerate(linhas_can):
+        if linha in titulos_can:
+            posicoes.append((i, titulos_can[linha]))
+
+    blocos = {}
+    for idx, (inicio, titulo) in enumerate(posicoes):
+        fim = posicoes[idx + 1][0] if idx + 1 < len(posicoes) else len(linhas)
+        bloco = "\n".join(linhas[inicio:fim]).strip()
+        blocos[titulo] = bloco
+    return blocos
+
+
+def buscar_padrao(texto: str, padroes: list[str], flags=re.IGNORECASE):
+    for padrao in padroes:
+        m = re.search(padrao, texto, flags)
+        if m:
+            valor = m.group(1).strip(" .:-")
+            if valor:
+                return valor
+    return None
+
+
+def limpar_valor(valor: str | None) -> str | None:
+    if valor is None:
+        return None
+    valor = re.sub(r"\s+", " ", valor).strip(" .:-")
+    valor_can = canonical(valor)
+    if valor_can in IGNORE_VALUES:
+        return None
+    return valor
+
+
+def buscar_linha_campo(bloco: str, nome_campo: str) -> str | None:
+    linhas = bloco.splitlines()
+    campo_can = canonical(nome_campo)
+    for linha in linhas:
+        linha_can = canonical(linha)
+        if campo_can in linha_can:
+            if ":" in linha:
+                valor = linha.split(":", 1)[1].strip()
+            else:
+                m = re.search(rf"{re.escape(nome_campo)}\s*[\. ]+(.+)", linha, re.IGNORECASE)
+                valor = m.group(1).strip() if m else None
+            if valor:
+                valor = re.split(r"\s{2,}", valor)[0].strip()
+                valor = re.sub(r"\b(Negativo|Normal|Ausentes?|Limpido|Límpido|Amarelo citrina)\b.*$", lambda x: x.group(1), valor, flags=re.IGNORECASE) if len(valor.split()) > 3 else valor
+                return limpar_valor(valor)
+    return None
+
+
+def extrair_urina(bloco: str) -> dict:
+    retorno = {}
+    aliases = {
+        "Cor": ["Cor"],
+        "Aspecto": ["Aspecto"],
+        "Densidade": ["Densidade"],
+        "pH": ["pH", "PH"],
+        "Proteínas": ["Proteínas", "Proteinas"],
+        "Corpos cetônicos": ["Corpos Cetônicos", "Corpos Cetonicos"],
+        "Glicose": ["GLICOSE", "Glicose"],
+        "Hemoglobina": ["Hemoglobina"],
+        "Pigmentos biliares": ["Pigmentos Biliares"],
+        "Urobilinogênio": ["Urobilinogênio", "Urobilinogenio"],
+        "Nitrito": ["Nitrito"],
+        "Leucócitos": ["Leucócitos", "Leucocitos"],
+        "Hemácias": ["Hemácias", "Hemacias"],
+        "Bactérias": ["Bactérias", "Bacterias"],
+        "Cristais": ["Cristais"],
+        "Células epiteliais": ["Células Epiteliais", "Celulas Epiteliais"],
+        "Filamento de muco": ["Filamento de Muco"],
+        "Leveduras": ["Leveduras"],
+        "Cilindros": ["Cilindros"],
+    }
+    for chave, label in URINA_MAP.items():
+        valor = None
+        for alias in aliases[label]:
+            valor = buscar_linha_campo(bloco, alias)
+            if valor:
+                break
+        retorno[chave] = valor
+    return retorno
+
+
+def extrair_resultados(blocos: dict) -> dict:
+    resultados = {}
+
+    resultados["glicose"] = limpar_valor(buscar_padrao(blocos.get("GLICOSE JEJUM", ""), [r"GLICOSE\s*\(Soro\)\s*[\. :]+([\d,\.]+)"]))
+    resultados["ureia"] = limpar_valor(buscar_padrao(blocos.get("UREIA ( SORO )", ""), [r"Ureia|Uréia", r"Ureia\s*[\. :]+([\d,\.]+)", r"Uréia\s*[\. :]+([\d,\.]+)"]))
+    resultados["creatinina"] = limpar_valor(buscar_padrao(blocos.get("CREATININA ( SORO )", ""), [r"Resultado:?\s*([\d,\.]+)\s*mg/dL"]))
+    resultados["tfge"] = limpar_valor(buscar_padrao(blocos.get("CREATININA ( SORO )", ""), [r"TFGe\).*?([\d,\.]+)\s*ml/min/1,73m", r"estimada\(TFGe\).*?([\d,\.]+)\s*ml/min/1,73m"], flags=re.IGNORECASE | re.DOTALL))
+    resultados["colesterol_total"] = limpar_valor(buscar_padrao(blocos.get("COLESTEROL TOTAL", ""), [r"COLESTEROL TOTAL\s*[\. :]+([\d,\.]+)\s*mg/dL"]))
+    resultados["hdl"] = limpar_valor(buscar_padrao(blocos.get("HDL - COLESTEROL", ""), [r"COLESTEROL HDL\s*[\. :]+([\d,\.]+)\s*mg/dl"]))
+    resultados["ldl"] = limpar_valor(buscar_padrao(blocos.get("LDL - COLESTEROL", ""), [r"COLESTEROL LDL\s*[\. :]+([\d,\.]+)\s*mg/dl"]))
+    resultados["vldl"] = limpar_valor(buscar_padrao(blocos.get("VLDL - COLESTEROL", ""), [r"COLESTEROL\s+VLDL\s*[\. :]+([\d,\.]+)\s*mg/dl"]))
+    resultados["triglicerides"] = limpar_valor(buscar_padrao(blocos.get("TRIGLICÉRIDES", ""), [r"TRIGLICERIDES\s*[\. :]+([\d,\.]+)\s*mg/dl"]))
+
+    hemograma = blocos.get("HEMOGRAMA COMPLETO", "")
+    resultados["hemacias"] = limpar_valor(buscar_padrao(hemograma, [r"HEMÁCIAS\s*[\. :]+([\d,\.]+)\s*M/mm3"]))
+    resultados["hemoglobina"] = limpar_valor(buscar_padrao(hemograma, [r"HEMOGLOBINA\s*[\. :]+([\d,\.]+)\s*g/dL"]))
+    resultados["hematocrito"] = limpar_valor(buscar_padrao(hemograma, [r"HEMATÓCRITO\s*[\. :]+([\d,\.]+)\s*%"]))
+    resultados["leucocitos"] = limpar_valor(buscar_padrao(hemograma, [r"LEUCÓCITOS\s*[\. :]+([\d\.]+)"]))
+    resultados["plaquetas"] = limpar_valor(buscar_padrao(hemograma, [r"PLAQUETAS\s*[\. :]+([\d\.]+)"]))
+
+    resultados["acido_urico"] = limpar_valor(buscar_padrao(blocos.get("ACIDO URICO SERICO", ""), [r"ÁCIDO ÚRICO.*?([\d,\.]+)\s*mg/dl", r"ACIDO URICO.*?([\d,\.]+)\s*mg/dl"], flags=re.IGNORECASE | re.DOTALL))
+    resultados["tgo"] = limpar_valor(buscar_padrao(blocos.get("TGO (AST)", ""), [r"([\d,\.]+)\s*U/L"]))
+    resultados["tgp"] = limpar_valor(buscar_padrao(blocos.get("TGP (ALT)", ""), [r"([\d,\.]+)\s*U/L"]))
+
+    bil = blocos.get("BILIRRUBINAS TOTAL E FRAÇÕES", "")
+    resultados["bilirrubina_total"] = limpar_valor(buscar_padrao(bil, [r"BILIRRUBINA TOTAL[\. :]+([\d,\.]+)\s*mg/dL"]))
+    resultados["bilirrubina_direta"] = limpar_valor(buscar_padrao(bil, [r"BILIRRUBINA DIRETA[\. :]+([\d,\.]+)\s*mg/dL"]))
+    resultados["bilirrubina_indireta"] = limpar_valor(buscar_padrao(bil, [r"BILIRRUBINA INDIRETA[\. :]+([\d,\.]+)\s*mg/dL"]))
+
+    resultados["sodio"] = limpar_valor(buscar_padrao(blocos.get("SÓDIO", ""), [r"([\d,\.]+)\s*mEq/L"], flags=re.IGNORECASE | re.DOTALL))
+    resultados["potassio"] = limpar_valor(buscar_padrao(blocos.get("POTÁSSIO", ""), [r"([\d,\.]+)\s*mEq/l"], flags=re.IGNORECASE | re.DOTALL))
+    resultados["vitamina_b12"] = limpar_valor(buscar_padrao(blocos.get("VITAMINA B12", ""), [r"Resultado\s*([\d,\.]+)\s*pg/mL"]))
+    resultados["vitamina_d"] = limpar_valor(buscar_padrao(blocos.get("VITAMINA D - 25 HIDROXI", ""), [r"Resultado.*?([\d,\.]+)\s*ng/mL", r"\n([\d,\.]+)\s*ng/mL"], flags=re.IGNORECASE | re.DOTALL))
+    resultados["tsh"] = limpar_valor(buscar_padrao(blocos.get("TSH - HORMÔNIO TIREOESTIMULANTE", ""), [r"Resultado\s*([\d,\.]+)\s*uUI/mL"]))
+    resultados["t4"] = limpar_valor(buscar_padrao(blocos.get("T4- TETRAIODOTIROXINA", ""), [r"Resultado\s*([\d,\.]+)\s*ug/dL"]))
+
+    hba1c_bloco = blocos.get("HEMOGLOBINA GLICADA", "")
+    resultados["hba1c"] = limpar_valor(buscar_padrao(hba1c_bloco, [r"Hb A1c:\s*([\d,\.]+)\s*%"]))
+    resultados["glicemia_media"] = limpar_valor(buscar_padrao(hba1c_bloco, [r"Glicemia estimada\s*m[eé]dia:\s*([\d,\.]+)\s*mg/dL"], flags=re.IGNORECASE | re.DOTALL))
+
+    return resultados
+
+
+def montar_resumo(nome_lab: str, resultados: dict, urina: dict) -> str:
+    secoes = OrderedDict()
+    for chave, meta in EXAMES_MAP.items():
+        valor = resultados.get(chave)
+        if not valor:
+            continue
+        secoes.setdefault(meta["secao"], []).append((meta["label"], valor, meta["unidade"]))
+
+    linhas = [f"RESUL. LABS - {nome_lab}"]
+    for secao, itens in secoes.items():
+        linhas.append(f"\n{secao}:")
+        for label, valor, unidade in itens:
+            sufixo = f" {unidade}" if unidade else ""
+            linhas.append(f"- {label}: {valor}{sufixo}")
+
+    urina_validos = [(label, urina[chave]) for chave, label in URINA_MAP.items() if urina.get(chave)]
+    if urina_validos:
+        linhas.append("\nEAS:")
+        for label, valor in urina_validos:
+            linhas.append(f"- {label}: {valor}")
+
+    return "\n".join(linhas)
+
+
+def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
+    exames_detectados = []
+    for titulo in blocos:
+        linhas = len(blocos[titulo].splitlines())
+        exames_detectados.append({"exame": titulo, "detectado": True, "linhas_bloco": linhas})
+
+    itens_resultado = []
+    for chave, meta in EXAMES_MAP.items():
+        valor = resultados.get(chave)
+        itens_resultado.append({
+            "secao": meta["secao"],
+            "campo": meta["label"],
+            "status": "Encontrado" if valor else "Não encontrado",
+            "valor": valor or "",
+        })
+
+    itens_urina = []
+    for chave, label in URINA_MAP.items():
+        valor = urina.get(chave)
+        itens_urina.append({
+            "secao": "EAS",
+            "campo": label,
+            "status": "Encontrado" if valor else "Não encontrado",
+            "valor": valor or "",
+        })
+
+    return {
+        "exames_detectados": exames_detectados,
+        "itens_resultado": itens_resultado,
+        "itens_urina": itens_urina,
+    }
+
 
 uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame", type=["pdf"])
+mostrar_debug = st.checkbox("Mostrar painel de depuração", value=True)
+mostrar_blocos = st.checkbox("Mostrar blocos brutos dos exames", value=False)
 
 if uploaded_file is not None:
     with st.spinner("Extraindo dados do PDF..."):
-        # 1. Extrai todo o texto do PDF
-        texto_completo = ""
-        with pdfplumber.open(uploaded_file) as pdf:
-            for pagina in pdf.pages:
-                texto_completo += pagina.extract_text() + "\n"
-        
-        # 2. Função de busca flexível por Regex
-        def extrair_valor(padroes, texto):
-            for padrao in padroes:
-                match = re.search(padrao, texto, re.IGNORECASE | re.DOTALL)
-                if match:
-                    val = match.group(1).strip()
-                    if val and not val.startswith('.'):
-                        return val
-            return "Não encontrado"
+        paginas, texto_completo = extrair_texto_pdf(uploaded_file)
+        laboratorio = detectar_laboratorio(texto_completo)
+        config_lab = LAB_CONFIGS[laboratorio]
+        blocos = extrair_blocos_por_titulos(texto_completo, config_lab["titulos_exames"])
+        resultados = extrair_resultados(blocos)
+        urina = extrair_urina(blocos.get("URINA TIPO I (EAS)", ""))
+        resumo_formatado = montar_resumo(config_lab["nome_resumo"], resultados, urina)
+        debug_info = montar_debug(blocos, resultados, urina)
 
-        # Padrões para os exames bioquímicos, hematológicos, hormonais e vitaminas
-        glicose = extrair_valor([r"GLICOSE\s*\(Soro\)\s*\|\s*([\d,\.]+)", r"GLICOSE.*?([\d,\.]+)\s*mg/dl"], texto_completo)
-        ureia = extrair_valor([r"Uréia\.\s*:\s*([\d,\.]+)", r"Uréia[^\d]*([\d,\.]+)\s*mg/dl"], texto_completo)
-        creatinina = extrair_valor([r"CREATININA\s*\(SORO\)[^\d]*([\d,\.]+)", r"Resultado:\s*([\d,\.]+)\s*mg/dL"], texto_completo)
-        colesterol_total = extrair_valor([r"COLESTEROL TOTAL:\s*([\d,\.]+)", r"COLESTEROL TOTAL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
-        hdl = extrair_valor([r"COLESTEROL HDL\.\s*([\d,\.]+)", r"COLESTEROL\s*HDL[^\d]*([\d,\.]+)", r"HDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
-        ldl = extrair_valor([r"COLESTEROL LDL\.\s*:\s*([\d,\.]+)", r"COLESTEROL\s*LDL[^\d]*([\d,\.]+)", r"LDL-COLESTEROL[^\d]*([\d,\.]+)\s*mg"], texto_completo)
-        triglicerides = extrair_valor([r"TRIGLICERIDES[^\d]*([\d,\.]+)", r"TRIGLICERIDES[^\d]*:\s*([\d,\.]+)"], texto_completo)
-        
-        eritrocitos = extrair_valor([r"HEMÁCIAS\.\s*([\d,\.]+)", r"ERITRÓCITOS[^\d]*([\d,\.]+)\s*M"], texto_completo)
-        hematocrito = extrair_valor([r"HEMATOCRITO\.\s*([\d,\.]+)", r"HEMATOCRITO[^\d]*([\d,\.]+)\s*%"], texto_completo)
-        plaquetas = extrair_valor([r"PLAQUETAS\.\s*([\d,\.]+)", r"PLAQUETAS[^\d]*([\d,\.]+)"], texto_completo)
-        leucocitos = extrair_valor([r"LEUCÓCITOS\.\s*([\d,\.]+)", r"LEUCÓCITOS[^\d]*([\d,\.]+)"], texto_completo)
-        
-        ferro_serico = extrair_valor([r"FERRO SÉRICO\s*([\d,\.]+)", r"FERRO.*?([\d,\.]+)\s*µg/dL"], texto_completo)
-        tibc = extrair_valor([r"CAPACIDADE TOTAL DE LIGAÇÃO.*?([\d,\.]+)", r"TIBC.*?([\d,\.]+)\s*µg/dL"], texto_completo)
-        sat_transferrina = extrair_valor([r"SATURAÇÃO DE TRANSFERRINA.*?([\d,\.]+)", r"TRANSFERRINA.*?([\d,\.]+)\s*%"], texto_completo)
-        
-        acido_urico = extrair_valor([r"ÁCIDO ÚRICO.*?([\d,\.]+)\s*mg/dl", r"ÁCIDO ÚRICO\.soro([\d,\.]+)\s*mg/dl"], texto_completo)
-        sodio = extrair_valor([r"SÓDIO\.\s*soro\s*([\d,\.]+)", r"SÓDIO.*?([\d,\.]+)\s*mEq/L"], texto_completo)
-        potassio = extrair_valor([r"POTÁSSIO\.\s*soro\s*([\d,\.]+)", r"POTÁSSIO.*?([\d,\.]+)\s*mEq/1"], texto_completo)
-        
-        calcio_total = extrair_valor([r"CÁLCIO TOTAL\s*([\d,\.]+)", r"CÁLCIO.*?([\d,\.]+)\s*mg/dL"], texto_completo)
-        calcio_ionizado = extrair_valor([r"CÁLCIO IONIZADO\s*([\d,\.]+)", r"CÁLCIO IONIZADO.*?([\d,\.]+)\s*mmol/L"], texto_completo)
-        magnesio = extrair_valor([r"MAGNÉSIO\s*([\d,\.]+)", r"MAGNÉSIO.*?([\d,\.]+)\s*mg/dL"], texto_completo)
-        fosforo = extrair_valor([r"FÓSFORO\s*([\d,\.]+)", r"FÓSFORO.*?([\d,\.]+)\s*mg/dL"], texto_completo)
-        
-        bilirrubina_total = extrair_valor([r"BILIRRUBINA TOTAL\.\s*([\d,\.]+)", r"BILIRRUBINA TOTAL.*?([\d,\.]+)\s*mg/dL"], texto_completo)
-        bilirrubina_direta = extrair_valor([r"BILIRRUBINA DIRETA\.\s*([\d,\.]+)", r"BILIRRUBINA DIRETA.*?([\d,\.]+)\s*mg/dL"], texto_completo)
-        bilirrubina_indireta = extrair_valor([r"BILIRRUBINA INDIRETA\.\s*([\d,\.]+)", r"BILIRRUBINA INDIRETA.*?([\d,\.]+)\s*mg/dL"], texto_completo)
-        
-        proteinas_totais = extrair_valor([r"PROTEÍNAS TOTAIS\s*([\d,\.]+)", r"PROTEÍNAS TOTAIS.*?([\d,\.]+)\s*g/dL"], texto_completo)
-        albumina = extrair_valor([r"ALBUMINA\s*([\d,\.]+)", r"ALBUMINA.*?([\d,\.]+)\s*g/dL"], texto_completo)
-        globulinas = extrair_valor([r"GLOBULINAS\s*([\d,\.]+)", r"GLOBULINAS.*?([\d,\.]+)\s*g/dL"], texto_completo)
-        
-        pcr = extrair_valor([r"PROTEÍNA C REATIVA.*?([\d,\.]+)", r"PCR.*?([\d,\.]+)\s*mg/L"], texto_completo)
-        vhs = extrair_valor([r"VELOCIDADE DE HEMOSSEDIMENTAÇÃO.*?([\d,\.]+)", r"VHS.*?([\d,\.]+)\s*mm/h"], texto_completo)
-        
-        tgo = extrair_valor([r"TGO\s*\(AST\.\s*([\d,\.]+)", r"TGO.*?([\d,\.]+)\s*U/L"], texto_completo)
-        tgp = extrair_valor([r"TGP\s*\(ALT\)\s*([\d,\.]+)", r"TGP.*?([\d,\.]+)\s*U/L"], texto_completo)
-        fosfatase = extrair_valor([r"FOSFATASE ALCALINA\.\s*([\d,\./]+)", r"FOSFATASE ALCALINA[^\d]*([\d,\./]+)"], texto_completo)
-        gama_gt = extrair_valor([r"GAMA GLUTAMIL TRANSFERASE\s*([\d,\.]+)", r"GAMA GT.*?([\d,\.]+)\s*UI/l"], texto_completo)
-        ferritina = extrair_valor([r"FERRITINA\.\s*([\d,\.]+)", r"FERRITINA.*?([\d,\.]+)\s*ng/ml"], texto_completo)
+    st.success(f"Extração concluída. Laboratório identificado: {config_lab['nome_resumo']}")
+    st.subheader("Resultado pronto para o prontuário")
+    st.text_area("Selecione, copie e cole:", resumo_formatado, height=420)
 
-        insulina = extrair_valor([r"INSULINA\s*([\d,\.]+)", r"INSULINA.*?([\d,\.]+)\s*µUI/mL"], texto_completo)
-        cortisol = extrair_valor([r"CORTISOL\s*([\d,\.]+)", r"CORTISOL.*?([\d,\.]+)\s*µg/dL"], texto_completo)
-        testosterona_total = extrair_valor([r"TESTOSTERONA TOTAL\s*([\d,\.]+)", r"TESTOSTERONA.*?([\d,\.]+)\s*ng/dL"], texto_completo)
-        estradiol = extrair_valor([r"ESTRADIOL\s*([\d,\.]+)", r"ESTRADIOL.*?([\d,\.]+)\s*pg/mL"], texto_completo)
-        prolactina = extrair_valor([r"PROLACTINA\s*([\d,\.]+)", r"PROLACTINA.*?([\d,\.]+)\s*ng/mL"], texto_completo)
-        psa_total = extrair_valor([r"PSA TOTAL\s*([\d,\.]+)", r"PSA.*?([\d,\.]+)\s*ng/mL"], texto_completo)
+    text_to_copy = (
+        resumo_formatado
+        .replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("$", "\\$")
+    )
+    html_code = f'''
+    <button onclick="navigator.clipboard.writeText(`{text_to_copy}`)"
+            style="padding:10px 16px;border:none;border-radius:8px;background:#0f766e;color:white;cursor:pointer;font-family:Arial,sans-serif;">
+        📋 Copiar para o prontuário
+    </button>
+    '''
+    st.components.v1.html(html_code, height=55)
 
-        vitamina_b12 = extrair_valor([r"VITAMINA B12.*?([\d,\.]+)\s*pg/mL", r"B12.*?([\d,\.]+)\s*pg/mL"], texto_completo)
-        vitamina_d = extrair_valor([r"VITAMINA D - 25 HIDROXI.*?([\d,\.]+)\s*ng/mL", r"25 HIDROXI.*?([\d,\.]+)\s*ng/mL"], texto_completo)
-        tsh = extrair_valor([r"TSH - HORMÔNIO TIREOESTIMULANTE.*?([\d,\.]+)\s*μUI/mL", r"TSH.*?([\d,\.]+)\s*μUI"], texto_completo)
-        t4 = extrair_valor([r"T4- TETRAIODOTIROXINA.*?([\d,\.]+)\s*µg/dL", r"T4.*?([\d,\.]+)\s*µg/dL"], texto_completo)
-        hba1c = extrair_valor([r"Hb A1c:\s*([\d,\.]+)\s*%", r"Hemoglobina Glicada.*?([\d,\.]+)\s*%"], texto_completo)
+    if mostrar_debug:
+        st.subheader("Painel de depuração")
+        st.caption("Use esta área para ver quais exames foram detectados e quais campos ainda precisam de ajuste.")
 
-        creatinina_urinaria = extrair_valor([r"CREATININA URINÁRIA.*?([\d,\.]+)", r"CREATININA URINÁRIA.*?([\d,\.]+)\s*mg/dL"], texto_completo)
-        microalbuminuria = extrair_valor([r"MICROALBUMINÚRIA.*?([\d,\.]+)", r"MICROALBUMINÚRIA.*?([\d,\.]+)\s*mg/24h"], texto_completo)
+        st.markdown("**Exames detectados no PDF**")
+        st.dataframe(debug_info["exames_detectados"], use_container_width=True, hide_index=True)
 
-        # Captura precisa baseada na estrutura exata do laudo de Urina Tipo I do Lab. Cruzeiro
-        urina_cor = extrair_valor([r"URINA TIPO I.*?Cor\s*\|\s*([A-ZÀ-Ú\s]+)", r"Exame Físico.*?Cor\s*\|\s*([A-ZÀ-Ú\s]+)"], texto_completo)
-        urina_aspecto = extrair_valor([r"URINA TIPO I.*?Aspecto\s*\|\s*([A-ZÀ-Ú\s]+)", r"Exame Físico.*?Aspecto\s*\|\s*([A-ZÀ-Ú\s]+)"], texto_completo)
-        urina_densidade = extrair_valor([r"URINA TIPO I.*?Densidade\s*\|\s*([\d,\.]+)", r"Exame Físico.*?Densidade\s*\|\s*([\d,\.]+)"], texto_completo)
-        urina_ph = extrair_valor([r"URINA TIPO I.*?PH\s*\|\s*([\d,\.]+)", r"Exame Físico.*?PH\s*\|\s*([\d,\.]+)"], texto_completo)
-        urina_proteinas = extrair_valor([r"URINA TIPO I.*?Proteínas\s*\|\s*([A-ZÀ-Ú]+)", r"Exame Químico.*?Proteínas\s*\|\s*([A-ZÀ-Ú]+)"], texto_completo)
-        urina_glicose = extrair_valor([r"URINA TIPO I.*?GLICOSE\.\.\s*\|\s*([A-ZÀ-Ú]+)", r"Exame Químico.*?GLICOSE\.\.\s*\|\s*([A-ZÀ-Ú]+)"], texto_completo)
-        urina_nitrito = extrair_valor([r"URINA TIPO I.*?Nitrito\s*\|\s*\.:\s*([A-ZÀ-Ú]+)", r"Exame Químico.*?Nitrito\s*\|\s*\.:\s*([A-ZÀ-Ú]+)"], texto_completo)
+        st.markdown("**Campos gerais**")
+        st.dataframe(debug_info["itens_resultado"], use_container_width=True, hide_index=True)
 
-        # 3. Monta o texto limpo para o prontuário
-        resumo_formatado = f"""RESUL. LABS - LAB. CRUZEIRO
-- Glicose (Soro): {glicose} mg/dL
-- Ureia (Soro): {ureia} mg/dL
-- Creatinina (Soro): {creatinina} mg/dL
-- Colesterol Total: {colesterol_total} mg/dL
-- Colesterol HDL: {hdl} mg/dL
-- Colesterol LDL: {ldl} mg/dL
-- Triglicérides: {triglicerides} mg/dL
-- Eritrócitos: {eritrocitos} milhões/µL
-- Hematócrito: {hematocrito}%
-- Plaquetas: {plaquetas} mil/µL
-- Leucócitos Totais: {leucocitos} /µL
-- Ferro Sérico: {ferro_serico} µg/dL
-- TIBC: {tibc} µg/dL
-- Saturação de Transferrina: {sat_transferrina}%
-- Ácido Úrico (Soro): {acido_urico} mg/dL
-- Sódio (Soro): {sodio} mEq/L
-- Potássio (Soro): {potassio} mEq/L
-- Cálcio Total: {calcio_total} mg/dL
-- Cálcio Ionizado: {calcio_ionizado} mmol/L
-- Magnésio (Soro): {magnesio} mg/dL
-- Fósforo (Soro): {fosforo} mg/dL
-- Bilirrubina Total: {bilirrubina_total} mg/dL
-- Bilirrubina Direta: {bilirrubina_direta} mg/dL
-- Bilirrubina Indireta: {bilirrubina_indireta} mg/dL
-- Proteínas Totais: {proteinas_totais} g/dL
-- Albumina (Soro): {albumina} g/dL
-- Globulinas: {globulinas} g/dL
-- Proteína C Reativa (PCR): {pcr} mg/L
-- VHS: {vhs} mm/h
-- TGO (AST): {tgo} U/L
-- TGP (ALT): {tgp} U/L
-- Fosfatase Alcalina: {fosfatase} U/L
-- Gama GT: {gama_gt} UI/L
-- Ferritina: {ferritina} ng/mL
-- Insulina (Soro): {insulina} µUI/mL
-- Cortisol Basal: {cortisol} µg/dL
-- Testosterona Total: {testosterona_total} ng/dL
-- Estradiol: {estradiol} pg/mL
-- Prolactina: {prolactina} ng/mL
-- PSA Total: {psa_total} ng/mL
-- Vitamina B12: {vitamina_b12} pg/mL
-- Vitamina D: {vitamina_d} ng/mL
-- TSH: {tsh} µUI/mL
-- T4 Livre: {t4} µg/dL
-- Hemoglobina Glicada (HbA1c): {hba1c}%
-- Creatinina Urinária: {creatinina_urinaria} mg/dL
-- Microalbuminúria: {microalbuminuria} mg/24h
-- Urina EAS - Cor: {urina_cor}
-- Urina EAS - Aspecto: {urina_aspecto}
-- Urina EAS - Densidade: {urina_densidade}
-- Urina EAS - pH: {urina_ph}
-- Urina EAS - Proteínas: {urina_proteinas}
-- Urina EAS - Glicose: {urina_glicose}
-- Urina EAS - Nitrito: {urina_nitrito}"""
+        st.markdown("**Campos do EAS**")
+        st.dataframe(debug_info["itens_urina"], use_container_width=True, hide_index=True)
 
-        st.subheader("Resultado Pronto para o Prontuário:")
-        st.text_area("Selecione, copie e cole abaixo:", resumo_formatado, height=350)
-        
-        # Botão interativo para copiar direto para o clipboard
-        text_to_copy = resumo_formatado.replace('\n', '\\n').replace('"', '\\"')
-        html_code = f"""
-        <button onclick="navigator.clipboard.writeText('{text_to_copy}'); alert('Texto copiado para a área de transferência!');" 
-        style="background-color: #ff4b4b; color: white; padding: 0.5rem 1rem; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; width: 100%;">
-            📋 Copiar para o Prontuário
-        </button>
-        """
-        st.components.v1.html(html_code, height=45)
-        
-        st.success("Extração otimizada concluída com sucesso!")
+    if mostrar_blocos:
+        st.subheader("Blocos brutos detectados")
+        for titulo, bloco in blocos.items():
+            with st.expander(titulo, expanded=False):
+                st.code(bloco)
+
+    with st.expander("Texto bruto extraído do PDF", expanded=False):
+        st.text(texto_completo[:30000])
