@@ -613,10 +613,10 @@ def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
 
 
 st.markdown(
-    '<div class="upload-card"><p class="upload-title">Envie aqui um novo resultado de exame em PDF</p><p class="upload-subtitle">Selecione ou arraste o arquivo para gerar um novo resumo.</p>',
+    '<div class="upload-card">',
     unsafe_allow_html=True,
 )
-uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame", type=["pdf"])
+uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame:", type=["pdf"])
 mostrar_debug = st.checkbox("Mostrar painel de depuração", value=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
