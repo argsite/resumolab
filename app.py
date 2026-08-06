@@ -264,24 +264,11 @@ EXAMES_MAP = OrderedDict([
 ])
 
 URINA_MAP = OrderedDict([
-    ("cor", "Cor"),
-    ("aspecto", "Aspecto"),
-    ("densidade", "Densidade"),
-    ("ph", "pH"),
     ("proteinas", "Proteínas"),
     ("corpos_cetonicos", "Corpos cetônicos"),
     ("glicose", "Glicose"),
-    ("hemoglobina", "Hemoglobina"),
-    ("pigmentos_biliares", "Pigmentos biliares"),
-    ("urobilinogenio", "Urobilinogênio"),
     ("nitrito", "Nitrito"),
     ("leucocitos", "Leucócitos"),
-    ("hemacias", "Hemácias"),
-    ("bacterias", "Bactérias"),
-    ("cristais", "Cristais"),
-    ("celulas_epiteliais", "Células epiteliais"),
-    ("filamento_muco", "Filamento de muco"),
-    ("leveduras", "Leveduras"),
     ("cilindros", "Cilindros"),
 ])
 
