@@ -613,7 +613,7 @@ def montar_debug(blocos: dict, resultados: dict, urina: dict) -> dict:
 
 
 st.markdown(
-    '<div class="upload-card">',
+    '<div>',
     unsafe_allow_html=True,
 )
 uploaded_file = st.file_uploader("Escolha o arquivo PDF do exame:", type=["pdf"])
